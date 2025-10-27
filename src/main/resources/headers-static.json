@@ -1,0 +1,9 @@
+{
+  "sessionHeaders": {
+    "X-Service-Name": "ms-quarkus-tienda",
+    "X-Service-Version": "1.0.0",
+    "X-Environment": "production",
+    "X-Region": "us-east-1"
+  }
+}
+
