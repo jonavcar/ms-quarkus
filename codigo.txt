@@ -1,0 +1,1211 @@
+```java
+package com.jonavcar.tienda.context;
+
+import jakarta.enterprise.context.RequestScoped;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@RequestScoped
+public class SessionPropagationContext {
+    
+    private final Map<String, String> headers = new ConcurrentHashMap<>();
+    
+    public void addHeader(String name, String value) {
+        if (name != null && value != null) {
+            headers.put(name, value);
+        }
+    }
+    
+    public void addHeaders(Map<String, String> newHeaders) {
+        if (newHeaders != null) {
+            headers.putAll(newHeaders);
+        }
+    }
+    
+    public String getHeader(String name) {
+        return headers.get(name);
+    }
+    
+    public Map<String, String> getAllHeaders() {
+        return new LinkedHashMap<>(headers);
+    }
+    
+    public boolean hasHeader(String name) {
+        return headers.containsKey(name);
+    }
+    
+    public int size() {
+        return headers.size();
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.context;
+
+import jakarta.enterprise.context.RequestScoped;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@RequestScoped
+public class EndpointHeaderContext {
+    
+    private final Map<String, String> headers = new ConcurrentHashMap<>();
+    
+    public void addHeader(String name, String value) {
+        if (name != null && value != null) {
+            headers.put(name, value);
+        }
+    }
+    
+    public void addHeaders(Map<String, String> newHeaders) {
+        if (newHeaders != null) {
+            headers.putAll(newHeaders);
+        }
+    }
+    
+    public Map<String, String> extractAndClear() {
+        Map<String, String> copy = new LinkedHashMap<>(headers);
+        headers.clear();
+        return copy;
+    }
+    
+    public boolean hasHeaders() {
+        return !headers.isEmpty();
+    }
+    
+    public int size() {
+        return headers.size();
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.config;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+@ApplicationScoped
+public class SessionHeadersConfiguration {
+    
+    private static final Logger LOG = Logger.getLogger(SessionHeadersConfiguration.class);
+    private static final String HEADERS_FILE = "headers-static.json";
+    
+    private final Map<String, String> sessionHeaders;
+    
+    @Inject
+    public SessionHeadersConfiguration(ObjectMapper objectMapper) {
+        this.sessionHeaders = loadHeadersFromJson(objectMapper);
+    }
+    
+    private Map<String, String> loadHeadersFromJson(ObjectMapper objectMapper) {
+        try (InputStream inputStream = getClass().getClassLoader()
+                .getResourceAsStream(HEADERS_FILE)) {
+            
+            if (inputStream == null) {
+                LOG.warnf("Headers file not found: %s", HEADERS_FILE);
+                return Collections.emptyMap();
+            }
+            
+            JsonNode rootNode = objectMapper.readTree(inputStream);
+            JsonNode sessionHeadersNode = rootNode.get("sessionHeaders");
+            
+            if (sessionHeadersNode == null || !sessionHeadersNode.isObject()) {
+                LOG.warn("sessionHeaders node not found or not an object");
+                return Collections.emptyMap();
+            }
+            
+            Map<String, String> headers = new HashMap<>();
+            sessionHeadersNode.fields().forEachRemaining(entry -> {
+                headers.put(entry.getKey(), entry.getValue().asText());
+            });
+            
+            LOG.infof("Loaded %d static session headers", headers.size());
+            return Collections.unmodifiableMap(headers);
+            
+        } catch (IOException e) {
+            LOG.error("Error loading headers from JSON", e);
+            return Collections.emptyMap();
+        }
+    }
+    
+    public Map<String, String> getSessionHeaders() {
+        return new HashMap<>(sessionHeaders);
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.dto;
+
+import java.io.Serializable;
+import java.util.Map;
+
+public class SessionDto implements Serializable {
+    
+    private String sessionId;
+    private String userId;
+    private String tenantId;
+    private String username;
+    private Map<String, String> metadata;
+    private Long expiresAt;
+    
+    public SessionDto() {}
+    
+    public SessionDto(String sessionId, String userId, String tenantId) {
+        this.sessionId = sessionId;
+        this.userId = userId;
+        this.tenantId = tenantId;
+    }
+    
+    public String getSessionId() {
+        return sessionId;
+    }
+    
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
+    }
+    
+    public String getUserId() {
+        return userId;
+    }
+    
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+    
+    public String getTenantId() {
+        return tenantId;
+    }
+    
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
+    
+    public String getUsername() {
+        return username;
+    }
+    
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    
+    public Map<String, String> getMetadata() {
+        return metadata;
+    }
+    
+    public void setMetadata(Map<String, String> metadata) {
+        this.metadata = metadata;
+    }
+    
+    public Long getExpiresAt() {
+        return expiresAt;
+    }
+    
+    public void setExpiresAt(Long expiresAt) {
+        this.expiresAt = expiresAt;
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.model;
+
+import com.jonavcar.tienda.dto.SessionDto;
+import java.util.Map;
+
+public class SessionValidationResponse {
+    
+    private boolean valid;
+    private SessionDto session;
+    private Map<String, String> propagationHeaders;
+    private String message;
+    
+    public SessionValidationResponse() {}
+    
+    public SessionValidationResponse(boolean valid, SessionDto session) {
+        this.valid = valid;
+        this.session = session;
+    }
+    
+    public boolean isValid() {
+        return valid;
+    }
+    
+    public void setValid(boolean valid) {
+        this.valid = valid;
+    }
+    
+    public SessionDto getSession() {
+        return session;
+    }
+    
+    public void setSession(SessionDto session) {
+        this.session = session;
+    }
+    
+    public Map<String, String> getPropagationHeaders() {
+        return propagationHeaders;
+    }
+    
+    public void setPropagationHeaders(Map<String, String> propagationHeaders) {
+        this.propagationHeaders = propagationHeaders;
+    }
+    
+    public String getMessage() {
+        return message;
+    }
+    
+    public void setMessage(String message) {
+        this.message = message;
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.model;
+
+public class Usuario {
+    
+    private Long id;
+    private String username;
+    private String email;
+    private String nombre;
+    private String apellido;
+    private Boolean activo;
+    
+    public Usuario() {}
+    
+    public Long getId() {
+        return id;
+    }
+    
+    public void setId(Long id) {
+        this.id = id;
+    }
+    
+    public String getUsername() {
+        return username;
+    }
+    
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    
+    public String getEmail() {
+        return email;
+    }
+    
+    public void setEmail(String email) {
+        this.email = email;
+    }
+    
+    public String getNombre() {
+        return nombre;
+    }
+    
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+    
+    public String getApellido() {
+        return apellido;
+    }
+    
+    public void setApellido(String apellido) {
+        this.apellido = apellido;
+    }
+    
+    public Boolean getActivo() {
+        return activo;
+    }
+    
+    public void setActivo(Boolean activo) {
+        this.activo = activo;
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.model;
+
+public class Cliente {
+    
+    private Long id;
+    private String nombre;
+    private String apellido;
+    private String email;
+    private String telefono;
+    private String direccion;
+    private Boolean activo;
+    
+    public Cliente() {}
+    
+    public Long getId() {
+        return id;
+    }
+    
+    public void setId(Long id) {
+        this.id = id;
+    }
+    
+    public String getNombre() {
+        return nombre;
+    }
+    
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+    
+    public String getApellido() {
+        return apellido;
+    }
+    
+    public void setApellido(String apellido) {
+        this.apellido = apellido;
+    }
+    
+    public String getEmail() {
+        return email;
+    }
+    
+    public void setEmail(String email) {
+        this.email = email;
+    }
+    
+    public String getTelefono() {
+        return telefono;
+    }
+    
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+    
+    public String getDireccion() {
+        return direccion;
+    }
+    
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
+    }
+    
+    public Boolean getActivo() {
+        return activo;
+    }
+    
+    public void setActivo(Boolean activo) {
+        this.activo = activo;
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.model;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+public class Venta {
+    
+    private Long id;
+    private Long clienteId;
+    private BigDecimal total;
+    private LocalDateTime fecha;
+    private String estado;
+    
+    public Venta() {}
+    
+    public Long getId() {
+        return id;
+    }
+    
+    public void setId(Long id) {
+        this.id = id;
+    }
+    
+    public Long getClienteId() {
+        return clienteId;
+    }
+    
+    public void setClienteId(Long clienteId) {
+        this.clienteId = clienteId;
+    }
+    
+    public BigDecimal getTotal() {
+        return total;
+    }
+    
+    public void setTotal(BigDecimal total) {
+        this.total = total;
+    }
+    
+    public LocalDateTime getFecha() {
+        return fecha;
+    }
+    
+    public void setFecha(LocalDateTime fecha) {
+        this.fecha = fecha;
+    }
+    
+    public String getEstado() {
+        return estado;
+    }
+    
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.proxy.factory;
+
+import com.jonavcar.tienda.context.SessionPropagationContext;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import org.eclipse.microprofile.rest.client.ext.ClientHeadersFactory;
+import org.jboss.logging.Logger;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+@ApplicationScoped
+public class SessionFlowHeadersFactory implements ClientHeadersFactory {
+    
+    private static final Logger LOG = Logger.getLogger(SessionFlowHeadersFactory.class);
+    
+    @Inject
+    SessionPropagationContext sessionPropagationContext;
+    
+    @Override
+    public MultivaluedMap<String, String> update(
+            MultivaluedMap<String, String> incomingHeaders,
+            MultivaluedMap<String, String> clientOutgoingHeaders) {
+        
+        Map<String, String> mergedHeaders = new LinkedHashMap<>();
+        
+        incomingHeaders.forEach((key, values) -> {
+            if (values != null && !values.isEmpty()) {
+                mergedHeaders.put(key, values.get(0));
+            }
+        });
+        
+        mergedHeaders.putAll(sessionPropagationContext.getAllHeaders());
+        
+        MultivaluedMap<String, String> result = new MultivaluedHashMap<>();
+        mergedHeaders.forEach(result::add);
+        
+        LOG.debugf("Session flow headers: %d", result.size());
+        return result;
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.proxy.factory;
+
+import com.jonavcar.tienda.context.EndpointHeaderContext;
+import com.jonavcar.tienda.context.SessionPropagationContext;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import org.eclipse.microprofile.rest.client.ext.ClientHeadersFactory;
+import org.jboss.logging.Logger;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+@ApplicationScoped
+public class EndpointSpecificHeadersFactory implements ClientHeadersFactory {
+    
+    private static final Logger LOG = Logger.getLogger(EndpointSpecificHeadersFactory.class);
+    
+    @Inject
+    SessionPropagationContext sessionPropagationContext;
+    
+    @Inject
+    EndpointHeaderContext endpointHeaderContext;
+    
+    @Override
+    public MultivaluedMap<String, String> update(
+            MultivaluedMap<String, String> incomingHeaders,
+            MultivaluedMap<String, String> clientOutgoingHeaders) {
+        
+        Map<String, String> mergedHeaders = new LinkedHashMap<>();
+        
+        incomingHeaders.forEach((key, values) -> {
+            if (values != null && !values.isEmpty()) {
+                mergedHeaders.put(key, values.get(0));
+            }
+        });
+        
+        mergedHeaders.putAll(sessionPropagationContext.getAllHeaders());
+        
+        Map<String, String> endpointHeaders = endpointHeaderContext.extractAndClear();
+        if (!endpointHeaders.isEmpty()) {
+            LOG.debugf("Applying %d endpoint-specific headers", endpointHeaders.size());
+            mergedHeaders.putAll(endpointHeaders);
+        }
+        
+        MultivaluedMap<String, String> result = new MultivaluedHashMap<>();
+        mergedHeaders.forEach(result::add);
+        
+        LOG.debugf("Final headers count: %d", result.size());
+        return result;
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.proxy;
+
+import com.jonavcar.tienda.model.SessionValidationResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
+import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
+
+@Path("/session")
+@RegisterRestClient(configKey = "session-api")
+@RegisterClientHeaders
+public interface SessionProxy {
+    
+    @POST
+    @Path("/validate")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    SessionValidationResponse validateToken();
+}
+```
+
+```java
+package com.jonavcar.tienda.proxy;
+
+import com.jonavcar.tienda.model.Usuario;
+import com.jonavcar.tienda.proxy.factory.EndpointSpecificHeadersFactory;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
+import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
+import java.util.List;
+
+@Path("/usuarios")
+@RegisterRestClient(configKey = "usuario-api")
+@RegisterClientHeaders(EndpointSpecificHeadersFactory.class)
+public interface UsuarioProxy {
+    
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<Usuario> listar();
+    
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    Usuario create(Usuario usuario);
+    
+    @PUT
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    Usuario update(@PathParam("id") Long id, Usuario usuario);
+    
+    @DELETE
+    @Path("/{id}")
+    void delete(@PathParam("id") Long id);
+}
+```
+
+```java
+package com.jonavcar.tienda.proxy;
+
+import com.jonavcar.tienda.model.Cliente;
+import com.jonavcar.tienda.proxy.factory.EndpointSpecificHeadersFactory;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
+import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
+import java.util.List;
+
+@Path("/clientes")
+@RegisterRestClient(configKey = "cliente-api")
+@RegisterClientHeaders(EndpointSpecificHeadersFactory.class)
+public interface ClienteProxy {
+    
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<Cliente> listar();
+    
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    Cliente create(Cliente cliente);
+    
+    @GET
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    Cliente getById(@PathParam("id") Long id);
+}
+```
+
+```java
+package com.jonavcar.tienda.proxy;
+
+import com.jonavcar.tienda.model.Venta;
+import com.jonavcar.tienda.proxy.factory.EndpointSpecificHeadersFactory;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
+import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
+import java.util.List;
+
+@Path("/ventas")
+@RegisterRestClient(configKey = "venta-api")
+@RegisterClientHeaders(EndpointSpecificHeadersFactory.class)
+public interface VentaProxy {
+    
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<Venta> listar();
+    
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    Venta create(Venta venta);
+}
+```
+
+```java
+package com.jonavcar.tienda.dao;
+
+import com.jonavcar.tienda.model.SessionValidationResponse;
+import com.jonavcar.tienda.proxy.SessionProxy;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
+
+@ApplicationScoped
+public class SessionDao {
+    
+    private static final Logger LOG = Logger.getLogger(SessionDao.class);
+    
+    @Inject
+    @RestClient
+    SessionProxy sessionProxy;
+    
+    public SessionValidationResponse validateToken() {
+        LOG.debug("Validating token with SessionProxy");
+        return sessionProxy.validateToken();
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.dao;
+
+import com.jonavcar.tienda.context.EndpointHeaderContext;
+import com.jonavcar.tienda.model.Usuario;
+import com.jonavcar.tienda.proxy.UsuarioProxy;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
+import java.util.List;
+
+@ApplicationScoped
+public class UsuarioDao {
+    
+    private static final Logger LOG = Logger.getLogger(UsuarioDao.class);
+    
+    @Inject
+    @RestClient
+    UsuarioProxy usuarioProxy;
+    
+    @Inject
+    EndpointHeaderContext endpointHeaderContext;
+    
+    public List<Usuario> listar() {
+        LOG.debug("Listing usuarios WITHOUT endpoint-specific headers");
+        return usuarioProxy.listar();
+    }
+    
+    public Usuario create(Usuario usuario) {
+        endpointHeaderContext.addHeader("X-Operation", "CREATE_USER");
+        endpointHeaderContext.addHeader("X-Resource-Type", "usuario");
+        endpointHeaderContext.addHeader("X-Timestamp", String.valueOf(System.currentTimeMillis()));
+        
+        LOG.debugf("Creating user with %d endpoint-specific headers", endpointHeaderContext.size());
+        return usuarioProxy.create(usuario);
+    }
+    
+    public Usuario update(Long id, Usuario usuario) {
+        endpointHeaderContext.addHeader("X-Operation", "UPDATE_USER");
+        endpointHeaderContext.addHeader("X-Entity-Id", id.toString());
+        endpointHeaderContext.addHeader("X-Timestamp", String.valueOf(System.currentTimeMillis()));
+        
+        LOG.debugf("Updating user %d with %d endpoint-specific headers", id, endpointHeaderContext.size());
+        return usuarioProxy.update(id, usuario);
+    }
+    
+    public void delete(Long id) {
+        endpointHeaderContext.addHeader("X-Operation", "DELETE_USER");
+        endpointHeaderContext.addHeader("X-Entity-Id", id.toString());
+        
+        LOG.debugf("Deleting user %d with endpoint-specific headers", id);
+        usuarioProxy.delete(id);
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.dao;
+
+import com.jonavcar.tienda.context.EndpointHeaderContext;
+import com.jonavcar.tienda.model.Cliente;
+import com.jonavcar.tienda.proxy.ClienteProxy;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
+import java.util.List;
+
+@ApplicationScoped
+public class ClienteDao {
+    
+    private static final Logger LOG = Logger.getLogger(ClienteDao.class);
+    
+    @Inject
+    @RestClient
+    ClienteProxy clienteProxy;
+    
+    @Inject
+    EndpointHeaderContext endpointHeaderContext;
+    
+    public List<Cliente> listar() {
+        endpointHeaderContext.addHeader("X-Operation", "LIST_CLIENTES");
+        endpointHeaderContext.addHeader("X-Query-Type", "LIST_ALL");
+        
+        LOG.debug("Listing clientes with endpoint-specific headers");
+        return clienteProxy.listar();
+    }
+    
+    public Cliente create(Cliente cliente) {
+        endpointHeaderContext.addHeader("X-Operation", "CREATE_CLIENTE");
+        endpointHeaderContext.addHeader("X-Resource-Type", "cliente");
+        
+        LOG.debug("Creating cliente with endpoint-specific headers");
+        return clienteProxy.create(cliente);
+    }
+    
+    public Cliente getById(Long id) {
+        LOG.debugf("Getting cliente %d WITHOUT endpoint-specific headers", id);
+        return clienteProxy.getById(id);
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.dao;
+
+import com.jonavcar.tienda.context.EndpointHeaderContext;
+import com.jonavcar.tienda.model.Venta;
+import com.jonavcar.tienda.proxy.VentaProxy;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
+import java.util.List;
+
+@ApplicationScoped
+public class VentaDao {
+    
+    private static final Logger LOG = Logger.getLogger(VentaDao.class);
+    
+    @Inject
+    @RestClient
+    VentaProxy ventaProxy;
+    
+    @Inject
+    EndpointHeaderContext endpointHeaderContext;
+    
+    public List<Venta> listar() {
+        endpointHeaderContext.addHeader("X-Operation", "LIST_VENTAS");
+        endpointHeaderContext.addHeader("X-Resource-Type", "venta");
+        
+        LOG.debug("Listing ventas with endpoint-specific headers");
+        return ventaProxy.listar();
+    }
+    
+    public Venta create(Venta venta) {
+        endpointHeaderContext.addHeader("X-Operation", "CREATE_VENTA");
+        endpointHeaderContext.addHeader("X-Resource-Type", "venta");
+        endpointHeaderContext.addHeader("X-Business-Unit", "sales");
+        
+        LOG.debug("Creating venta with endpoint-specific headers");
+        return ventaProxy.create(venta);
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.service;
+
+import com.jonavcar.tienda.config.SessionHeadersConfiguration;
+import com.jonavcar.tienda.context.SessionPropagationContext;
+import com.jonavcar.tienda.dao.SessionDao;
+import com.jonavcar.tienda.dto.SessionDto;
+import com.jonavcar.tienda.model.SessionValidationResponse;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
+import org.jboss.logging.Logger;
+
+@ApplicationScoped
+public class SessionValidationService {
+    
+    private static final Logger LOG = Logger.getLogger(SessionValidationService.class);
+    
+    @Inject
+    SessionDao sessionDao;
+    
+    @Inject
+    SessionPropagationContext sessionPropagationContext;
+    
+    @Inject
+    SessionHeadersConfiguration sessionHeadersConfiguration;
+    
+    public SessionDto validateAndPropagateHeaders() {
+        LOG.debug("Starting session validation and header propagation");
+        
+        sessionPropagationContext.addHeaders(sessionHeadersConfiguration.getSessionHeaders());
+        LOG.debugf("Added %d static headers from configuration", 
+                   sessionHeadersConfiguration.getSessionHeaders().size());
+        
+        SessionValidationResponse response = sessionDao.validateToken();
+        
+        if (response == null || !response.isValid()) {
+            String errorMsg = response != null && response.getMessage() != null 
+                    ? response.getMessage() 
+                    : "Token de sesión inválido o expirado";
+            
+            LOG.warnf("Session validation failed: %s", errorMsg);
+            throw new WebApplicationException(errorMsg, Response.Status.UNAUTHORIZED);
+        }
+        
+        if (response.getSession() == null) {
+            LOG.error("Session validation succeeded but SessionDto is null");
+            throw new WebApplicationException(
+                    "Datos de sesión no disponibles", 
+                    Response.Status.INTERNAL_SERVER_ERROR
+            );
+        }
+        
+        if (response.getPropagationHeaders() != null && !response.getPropagationHeaders().isEmpty()) {
+            LOG.debugf("Adding %d dynamic headers from session response", 
+                       response.getPropagationHeaders().size());
+            sessionPropagationContext.addHeaders(response.getPropagationHeaders());
+        }
+        
+        LOG.infof("Session validated successfully for user: %s", 
+                  response.getSession().getUserId());
+        
+        return response.getSession();
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.service;
+
+import com.jonavcar.tienda.dao.UsuarioDao;
+import com.jonavcar.tienda.model.Usuario;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
+import java.util.List;
+
+@ApplicationScoped
+public class UsuarioService {
+    
+    private static final Logger LOG = Logger.getLogger(UsuarioService.class);
+    
+    @Inject
+    UsuarioDao usuarioDao;
+    
+    public List<Usuario> listar() {
+        LOG.debug("Service: Listing usuarios");
+        return usuarioDao.listar();
+    }
+    
+    public Usuario create(Usuario usuario) {
+        LOG.debugf("Service: Creating usuario %s", usuario.getUsername());
+        validateUsuario(usuario);
+        return usuarioDao.create(usuario);
+    }
+    
+    public Usuario update(Long id, Usuario usuario) {
+        LOG.debugf("Service: Updating usuario %d", id);
+        validateUsuario(usuario);
+        return usuarioDao.update(id, usuario);
+    }
+    
+    public void delete(Long id) {
+        LOG.debugf("Service: Deleting usuario %d", id);
+        usuarioDao.delete(id);
+    }
+    
+    private void validateUsuario(Usuario usuario) {
+        if (usuario == null) {
+            throw new IllegalArgumentException("Usuario cannot be null");
+        }
+        if (usuario.getUsername() == null || usuario.getUsername().isBlank()) {
+            throw new IllegalArgumentException("Username is required");
+        }
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.service;
+
+import com.jonavcar.tienda.dao.ClienteDao;
+import com.jonavcar.tienda.model.Cliente;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
+import java.util.List;
+
+@ApplicationScoped
+public class ClienteService {
+    
+    private static final Logger LOG = Logger.getLogger(ClienteService.class);
+    
+    @Inject
+    ClienteDao clienteDao;
+    
+    public List<Cliente> listar() {
+        LOG.debug("Service: Listing clientes");
+        return clienteDao.listar();
+    }
+    
+    public Cliente create(Cliente cliente) {
+        LOG.debug("Service: Creating cliente");
+        return clienteDao.create(cliente);
+    }
+    
+    public Cliente getById(Long id) {
+        LOG.debugf("Service: Getting cliente %d", id);
+        return clienteDao.getById(id);
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.service;
+
+import com.jonavcar.tienda.dao.VentaDao;
+import com.jonavcar.tienda.model.Venta;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
+import java.util.List;
+
+@ApplicationScoped
+public class VentaService {
+    
+    private static final Logger LOG = Logger.getLogger(VentaService.class);
+    
+    @Inject
+    VentaDao ventaDao;
+    
+    public List<Venta> listar() {
+        LOG.debug("Service: Listing ventas");
+        return ventaDao.listar();
+    }
+    
+    public Venta create(Venta venta) {
+        LOG.debug("Service: Creating venta");
+        return ventaDao.create(venta);
+    }
+}
+```
+
+```java
+package com.jonavcar.tienda.controller;
+
+import com.jonavcar.tienda.dto.SessionDto;
+import com.jonavcar.tienda.model.Usuario;
+import com.jonavcar.tienda.model.Cliente;
+import com.jonavcar.tienda.model.Venta;
+import com.jonavcar.tienda.service.SessionValidationService;
+import com.jonavcar.tienda.service.UsuarioService;
+import com.jonavcar.tienda.service.ClienteService;
+import com.jonavcar.tienda.service.VentaService;
+import io.smallrye.common.annotation.RunOnVirtualThread;
+import jakarta.inject.Inject;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.jboss.logging.Logger;
+import java.util.List;
+
+@Path("/api")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class TiendaController {
+    
+    private static final Logger LOG = Logger.getLogger(TiendaController.class);
+    
+    @Inject
+    SessionValidationService sessionValidationService;
+    
+    @Inject
+    UsuarioService usuarioService;
+    
+    @Inject
+    ClienteService clienteService;
+    
+    @Inject
+    VentaService ventaService;
+    
+    @GET
+    @Path("/usuarios")
+    @RunOnVirtualThread
+    public Response listarUsuarios() {
+        LOG.debug("Controller: Received listar usuarios request");
+        
+        SessionDto session = sessionValidationService.validateAndPropagateHeaders();
+        LOG.infof("Listing usuarios for tenant: %s, user: %s", 
+                  session.getTenantId(), session.getUserId());
+        
+        List<Usuario> usuarios = usuarioService.listar();
+        return Response.ok(usuarios).build();
+    }
+    
+    @POST
+    @Path("/usuarios")
+    @RunOnVirtualThread
+    public Response createUsuario(@Valid Usuario usuario) {
+        LOG.debug("Controller: Received create usuario request");
+        
+        SessionDto session = sessionValidationService.validateAndPropagateHeaders();
+        LOG.infof("Creating usuario for tenant: %s, user: %s", 
+                  session.getTenantId(), session.getUserId());
+        
+        Usuario created = usuarioService.create(usuario);
+        return Response.status(Response.Status.CREATED).entity(created).build();
+    }
+    
+    @PUT
+    @Path("/usuarios/{id}")
+    @RunOnVirtualThread
+    public Response updateUsuario(@PathParam("id") Long id, @Valid Usuario usuario) {
+        LOG.debugf("Controller: Received update usuario %d request", id);
+        
+        SessionDto session = sessionValidationService.validateAndPropagateHeaders();
+        LOG.infof("Updating usuario %d by user: %s", id, session.getUserId());
+        
+        Usuario updated = usuarioService.update(id, usuario);
+        return Response.ok(updated).build();
+    }
+    
+    @DELETE
+    @Path("/usuarios/{id}")
+    @RunOnVirtualThread
+    public Response deleteUsuario(@PathParam("id") Long id) {
+        LOG.debugf("Controller: Received delete usuario %d request", id);
+        
+        SessionDto session = sessionValidationService.validateAndPropagateHeaders();
+        LOG.infof("Deleting usuario %d by user: %s", id, session.getUserId());
+        
+        usuarioService.delete(id);
+        return Response.noContent().build();
+    }
+    
+    @GET
+    @Path("/clientes")
+    @RunOnVirtualThread
+    public Response listarClientes() {
+        LOG.debug("Controller: Received listar clientes request");
+        
+        SessionDto session = sessionValidationService.validateAndPropagateHeaders();
+        LOG.infof("Listing clientes for tenant: %s, user: %s", 
+                  session.getTenantId(), session.getUserId());
+        
+        List<Cliente> clientes = clienteService.listar();
+        return Response.ok(clientes).build();
+    }
+    
+    @POST
+    @Path("/clientes")
+    @RunOnVirtualThread
+    public Response createCliente(@Valid Cliente cliente) {
+        LOG.debug("Controller: Received create cliente request");
+        
+        SessionDto session = sessionValidationService.validateAndPropagateHeaders();
+        LOG.infof("Creating cliente for user: %s", session.getUserId());
+        
+        Cliente created = clienteService.create(cliente);
+        return Response.status(Response.Status.CREATED).entity(created).build();
+    }
+    
+    @GET
+    @Path("/clientes/{id}")
+    @RunOnVirtualThread
+    public Response getCliente(@PathParam("id") Long id) {
+        LOG.debugf("Controller: Received get cliente %d request", id);
+        
+        SessionDto session = sessionValidationService.validateAndPropagateHeaders();
+        LOG.infof("Getting cliente %d for user: %s", id, session.getUserId());
+        
+        Cliente cliente = clienteService.getById(id);
+        return Response.ok(cliente).build();
+    }
+    
+    @GET
+    @Path("/ventas")
+    @RunOnVirtualThread
+    public Response listarVentas() {
+        LOG.debug("Controller: Received listar ventas request");
+        
+        SessionDto session = sessionValidationService.validateAndPropagateHeaders();
+        LOG.infof("Listing ventas for tenant: %s, user: %s", 
+                  session.getTenantId(), session.getUserId());
+        
+        List<Venta> ventas = ventaService.listar();
+        return Response.ok(ventas).build();
+    }
+    
+    @POST
+    @Path("/ventas")
+    @RunOnVirtualThread
+    public Response createVenta(@Valid Venta venta) {
+        LOG.debug("Controller: Received create venta request");
+        
+        SessionDto session = sessionValidationService.validateAndPropagateHeaders();
+        LOG.infof("Creating venta for user: %s", session.getUserId());
+        
+        Venta created = ventaService.create(venta);
+        return Response.status(Response.Status.CREATED).entity(created).build();
+    }
+}
+```
+
+Código listo para producción, optimizado para Quarkus JDK 21 con hilos virtuales, siguiendo Clean Architecture y principios SOLID.
