@@ -25,21 +25,33 @@ public class VentaService {
   }
 
   public Venta create(Venta venta) {
-    LOG.info("Creating new venta");
+    LOG.infof("Creating new venta: clienteId=%s, total=%s", venta.getClienteId(), venta.getTotal());
 
-    // Crear la venta en la base de datos
+    // Persistir la venta primero
     Venta ventaCreada = ventaDao.create(venta);
 
-    // Enviar evento a Kafka de forma asíncrona
-    ventaKafkaProducer.sendVentaCreatedEvent(ventaCreada)
-        .thenAccept(v -> LOG.infof("Kafka event sent for venta: %s", ventaCreada.getId()))
-        .exceptionally(throwable -> {
-            LOG.errorf(throwable, "Failed to send Kafka event for venta: %s", ventaCreada.getId());
-            // No falla la operación si Kafka falla, solo se loguea
-            return null;
-        });
+    // Publicar evento de forma asíncrona sin bloquear la respuesta
+    publishEventAsync(ventaCreada);
 
-    LOG.infof("Venta created successfully: %s", ventaCreada.getId());
+    LOG.infof("Venta created successfully: id=%s", ventaCreada.getId());
     return ventaCreada;
+  }
+
+  /**
+   * Publica el evento de venta creada de forma asíncrona
+   * Los errores de Kafka no afectan la operación principal
+   */
+  private void publishEventAsync(Venta venta) {
+    try {
+      ventaKafkaProducer.publishVentaCreatedEvent(venta)
+          .exceptionally(throwable -> {
+              LOG.warnf(throwable, "Event publication failed for venta: id=%s. Event will be lost.", venta.getId());
+              // TODO: Implementar patrón Outbox o Dead Letter Queue para eventos fallidos
+              return null;
+          });
+    } catch (Exception e) {
+      LOG.errorf(e, "Unexpected error publishing event for venta: id=%s", venta.getId());
+      // No propagar la excepción para no afectar la operación principal
+    }
   }
 }

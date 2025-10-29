@@ -1,32 +1,43 @@
 package com.jonavcar.tienda.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.jonavcar.tienda.event.DomainEvent;
 import com.jonavcar.tienda.model.Venta;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public class VentaEventDto {
+public class VentaEventDto extends DomainEvent {
 
+    private static final String EVENT_TYPE = "venta.created";
+    private static final String EVENT_VERSION = "1.0";
+
+    @JsonProperty("venta_id")
     private Long ventaId;
+
+    @JsonProperty("cliente_id")
     private Long clienteId;
+
+    @JsonProperty("total")
     private BigDecimal total;
+
+    @JsonProperty("estado")
     private String estado;
+
+    @JsonProperty("fecha_venta")
     private LocalDateTime fechaVenta;
-    private String eventType;
-    private LocalDateTime eventTimestamp;
 
     public VentaEventDto() {
-        this.eventTimestamp = LocalDateTime.now();
+        super(EVENT_TYPE, EVENT_VERSION);
     }
 
-    public VentaEventDto(Venta venta, String eventType) {
+    public VentaEventDto(Venta venta) {
+        super(EVENT_TYPE, EVENT_VERSION);
         this.ventaId = venta.getId();
         this.clienteId = venta.getClienteId();
         this.total = venta.getTotal();
         this.estado = venta.getEstado();
         this.fechaVenta = venta.getFecha();
-        this.eventType = eventType;
-        this.eventTimestamp = LocalDateTime.now();
     }
 
     public Long getVentaId() {
@@ -69,32 +80,18 @@ public class VentaEventDto {
         this.fechaVenta = fechaVenta;
     }
 
-    public String getEventType() {
-        return eventType;
-    }
-
-    public void setEventType(String eventType) {
-        this.eventType = eventType;
-    }
-
-    public LocalDateTime getEventTimestamp() {
-        return eventTimestamp;
-    }
-
-    public void setEventTimestamp(LocalDateTime eventTimestamp) {
-        this.eventTimestamp = eventTimestamp;
-    }
-
     @Override
     public String toString() {
         return "VentaEventDto{" +
-                "ventaId=" + ventaId +
+                "eventId='" + getEventId() + '\'' +
+                ", eventType='" + getEventType() + '\'' +
+                ", ventaId=" + ventaId +
                 ", clienteId=" + clienteId +
                 ", total=" + total +
                 ", estado='" + estado + '\'' +
                 ", fechaVenta=" + fechaVenta +
-                ", eventType='" + eventType + '\'' +
-                ", eventTimestamp=" + eventTimestamp +
+                ", eventTimestamp=" + getEventTimestamp() +
                 '}';
     }
 }
+

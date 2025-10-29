@@ -205,18 +205,25 @@ kafka:
 mp:
   messaging:
     outgoing:
-      ventas:
+      ventas-out:
         connector: smallrye-kafka
-        topic: ventas-topic
+        topic: ${KAFKA_VENTAS_TOPIC:ventas-events}
         value:
           serializer: io.quarkus.kafka.client.serialization.ObjectMapperSerializer
         key:
           serializer: org.apache.kafka.common.serialization.StringSerializer
-        acks: 1
+        # Configuración de fiabilidad
+        acks: all
         retries: 3
-        max:
-          in:
-            flight:
-              requests:
-                per:
-                  connection: 5
+        max-in-flight-requests-per-connection: 5
+        enable-idempotence: true
+        # Configuración de rendimiento
+        batch-size: 16384
+        linger-ms: 10
+        buffer-memory: 33554432
+        compression-type: snappy
+        # Timeouts
+        request-timeout-ms: 30000
+        delivery-timeout-ms: 120000
+        # Configuración de particiones
+        partitioner: org.apache.kafka.clients.producer.internals.DefaultPartitioner
