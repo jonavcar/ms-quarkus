@@ -1,0 +1,153 @@
+application:
+  # Configuración de segmentos de código
+  segments-code:
+  
+  # Configuración de estados y tipos de cuenta
+  account-status-types-properties:
+    family-codes:
+      invalid-code-origin: []
+      invalid-code-destination: ["009"]
+    join-account-type:
+      invalid-code-origin:
+        - 103
+        - MY
+        - Y
+      invalid-code-destination:
+        - 000
+        - 00
+        - 0
+    valid-states-accounts:
+      - family-codes: ["005", "009"]
+        valid-states: ["00", "01", "02", "07"]
+      - family-codes: ["004", "007"]
+        valid-states: ["00", "06", "07", "09"]
+  
+  # Parámetros de consulta de productos
+  product-query-params:
+    familyCode: ''
+    filterFields: '0210'
+    extraFields: 'balanceInformation'
+  
+  # Configuración de autorización
+  authorization:
+    crcParameters:
+      - 'amount'
+      - 'originProduct.productHolder.cic'
+    validations:
+      'HK':
+        '700':
+          - 'CRC'
+          - 'LIMITS'
+          - 'RSA'
+        '701':
+          - 'CRC'
+          - 'LIMITS'
+          - 'RSA'
+      'BM':
+        '700':
+          - 'CRC'
+          - 'LIMITS'
+        '701':
+          - 'CRC'
+          - 'LIMITS'
+  
+  # Parámetros de eventos
+  event-parameters:
+    audit-parameters:
+      hostRegionName: "aksbadip"
+      typeCode:
+        '700': "207"
+        '701': "208"
+      sourceApplication:
+        BM: MBBK
+        HK: NHBK
+      country: "604"
+  
+  
+  obfuscation-rules:
+    enabled: true
+  
+  max-quantity-account-search: 4
+  
+  channel-allow-overdrawn-accounts: ["BM"]
+  
+  # Control de límites de transferencia
+  transfer-limit-control:
+    capture-mode:
+      entry-mode: "01"
+    flag-mode:
+      lm10: "N"
+      nslm: "N"
+    product-detail:
+      family:
+        code: "015"
+      product:
+        code: "042"
+  
+  # Parámetros de tipo de transferencia
+  transfer-type-parameters:
+    own-transfer:
+      BM:
+        opn-code: '700'
+        opn-sub-code: '700'
+      HK:
+        opn-code: '700'
+        opn-sub-code: '700'
+    third-transfer:
+      BM:
+        opn-code: '701'
+        opn-sub-code: '701'
+      HK:
+        opn-code: '701'
+        opn-sub-code: '701'
+  
+  # Adaptadores
+  adapter:
+    currencyCodeToIso:
+      '1001': 'USD'
+      '0001': 'PEN'
+    
+    familyCodeByTioAux:
+      "CTEORD": "004"
+      "AHOAHO": "005"
+      "CTEEXC": "007"
+      "DEPCTC": "009"
+    
+    familyDescriptionByFamilyCode:
+      "004": "CUENTA CORRIENTE"
+      "005": "CUENTA DE AHORRO"
+      "007": "CUENTA MAESTRA"
+      "009": "CTS"
+    
+    productCodeByFamilyCode:
+      "004": "016"
+      "005": "017"
+      "007": "022"
+      "009": "025"
+    
+    signModeToDescription:
+      1: "SIGNMODE_TOKEN"
+      2: "SIGNMODE_TOUCHID"
+      3: "SIGNMODE_FINGERPRINT"
+      4: "SIGNMODE_SOFTTOKEN"
+      5: "SIGNMODE_NOTOKEN"
+      6: "SIGNMODE_FACEID"
+      7: "SIGNMODE_CLAVE6"
+      8: "SIGNMODE_CLAVE4"
+      9: "SIGNMODE_BIOFACIAL"
+      10: "SIGNMODE_OTP"
+      11: "SIGNMODE_BIODACTILAR"
+      12: "SIGNMODE_IDC"
+      13: "SIGNMODE_VISTOB"
+      14: "SIGNMODE_PREG"
+  
+  # Notificaciones
+  notification:
+    subject:
+      '700': 'Constancia de Transferencia Entre mis Cuentas - Servicio de Notificaciones'
+      '701': 'Constancia de Transferencia a Terceros BCP - Servicio de Notificaciones BCP'
+    description-type:
+      '700': "Transferencia entre mis cuentas"
+      '701': "Transferencia a terceros BCP"
+    template-id: ${r_template_id}
+    template-type: "idTemplate"
