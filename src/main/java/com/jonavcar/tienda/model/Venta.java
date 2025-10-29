@@ -5,52 +5,52 @@ import java.time.LocalDateTime;
 
 public class Venta {
 
-    private Long id;
-    private Long clienteId;
-    private BigDecimal total;
-    private LocalDateTime fecha;
-    private String estado;
+  private Long id;
+  private Long clienteId;
+  private BigDecimal total;
+  private LocalDateTime fecha;
+  private String estado;
 
-    public Venta() {
-    }
+  public Venta() {
+  }
 
-    public Long getId() {
-        return id;
-    }
+  public Long getId() {
+    return id;
+  }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+  public void setId(Long id) {
+    this.id = id;
+  }
 
-    public Long getClienteId() {
-        return clienteId;
-    }
+  public Long getClienteId() {
+    return clienteId;
+  }
 
-    public void setClienteId(Long clienteId) {
-        this.clienteId = clienteId;
-    }
+  public void setClienteId(Long clienteId) {
+    this.clienteId = clienteId;
+  }
 
-    public BigDecimal getTotal() {
-        return total;
-    }
+  public BigDecimal getTotal() {
+    return total;
+  }
 
-    public void setTotal(BigDecimal total) {
-        this.total = total;
-    }
+  public void setTotal(BigDecimal total) {
+    this.total = total;
+  }
 
-    public LocalDateTime getFecha() {
-        return fecha;
-    }
+  public LocalDateTime getFecha() {
+    return fecha;
+  }
 
-    public void setFecha(LocalDateTime fecha) {
-        this.fecha = fecha;
-    }
+  public void setFecha(LocalDateTime fecha) {
+    this.fecha = fecha;
+  }
 
-    public String getEstado() {
-        return estado;
-    }
+  public String getEstado() {
+    return estado;
+  }
 
-    public void setEstado(String estado) {
-        this.estado = estado;
-    }
+  public void setEstado(String estado) {
+    this.estado = estado;
+  }
 }

@@ -10,15 +10,15 @@ import org.jboss.logging.Logger;
 @ApplicationScoped
 public class SessionDao {
 
-    private static final Logger LOG = Logger.getLogger(SessionDao.class);
+  private static final Logger LOG = Logger.getLogger(SessionDao.class);
 
-    @Inject
-    @RestClient
-    SessionProxy sessionProxy;
+  @Inject
+  @RestClient
+  SessionProxy sessionProxy;
 
-    public SessionValidationResponse validateToken() {
-        LOG.debug("Validating token via SessionProxy");
-        return sessionProxy.validateToken();
-    }
+  public SessionValidationResponse validateToken() {
+    LOG.debug("Validating token via SessionProxy");
+    return sessionProxy.validateToken();
+  }
 }
 

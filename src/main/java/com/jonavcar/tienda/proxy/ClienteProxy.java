@@ -2,12 +2,16 @@ package com.jonavcar.tienda.proxy;
 
 import com.jonavcar.tienda.model.Cliente;
 import com.jonavcar.tienda.proxy.factory.EndpointSpecificHeadersFactory;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.util.List;
 import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
-
-import java.util.List;
 
 @Path("/clientes")
 @RegisterRestClient(configKey = "cliente-api")
@@ -16,14 +20,14 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public interface ClienteProxy {
 
-    @GET
-    List<Cliente> listar();
+  @GET
+  List<Cliente> listar();
 
-    @POST
-    Cliente create(Cliente cliente);
+  @POST
+  Cliente create(Cliente cliente);
 
-    @GET
-    @Path("/{id}")
-    Cliente getById(@PathParam("id") Long id);
+  @GET
+  @Path("/{id}")
+  Cliente getById(@PathParam("id") Long id);
 }
 

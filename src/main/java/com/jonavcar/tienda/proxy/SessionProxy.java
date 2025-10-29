@@ -13,9 +13,9 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 @RegisterClientHeaders
 public interface SessionProxy {
 
-    @POST
-    @Path("/validate")
-    @Produces(MediaType.APPLICATION_JSON)
-    SessionValidationResponse validateToken();
+  @POST
+  @Path("/validate")
+  @Produces(MediaType.APPLICATION_JSON)
+  SessionValidationResponse validateToken();
 }
 
