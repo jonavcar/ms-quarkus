@@ -1,5 +1,6 @@
 package com.jonavcar.tienda.controller;
 
+import com.jonavcar.tienda.config.AccountStatusTypesPropertiesConfig;
 import com.jonavcar.tienda.config.ProductQueryParamsConfig;
 import com.jonavcar.tienda.dto.SessionDto;
 import com.jonavcar.tienda.model.Cliente;
@@ -31,6 +32,8 @@ public class TiendaController {
 
     @Inject
     ProductQueryParamsConfig productQueryParamsConfig;
+    @Inject
+    AccountStatusTypesPropertiesConfig accountStatusTypesPropertiesConfig;
 
     @Inject
     UsuarioService usuarioService;
