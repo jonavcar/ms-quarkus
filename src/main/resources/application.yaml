@@ -165,3 +165,58 @@ redis:
   connect-timeout: 10000
   retry-attempts: 3
   retry-interval: 1500
+
+# Configuración de MicroProfile REST Client
+quarkus:
+  rest-client:
+    # Cliente API
+    cliente-api:
+      url: ${CLIENTE_API_URL:http://localhost:8081}
+      scope: jakarta.enterprise.context.RequestScoped
+      connect-timeout: 5000
+      read-timeout: 10000
+
+    # Usuario API
+    usuario-api:
+      url: ${USUARIO_API_URL:http://localhost:8082}
+      scope: jakarta.enterprise.context.RequestScoped
+      connect-timeout: 5000
+      read-timeout: 10000
+
+    # Venta API
+    venta-api:
+      url: ${VENTA_API_URL:http://localhost:8083}
+      scope: jakarta.enterprise.context.RequestScoped
+      connect-timeout: 5000
+      read-timeout: 10000
+
+    # Session API
+    session-api:
+      url: ${SESSION_API_URL:http://localhost:8084}
+      scope: jakarta.enterprise.context.RequestScoped
+      connect-timeout: 5000
+      read-timeout: 10000
+
+# Configuración de Kafka
+kafka:
+  bootstrap:
+    servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+mp:
+  messaging:
+    outgoing:
+      ventas:
+        connector: smallrye-kafka
+        topic: ventas-topic
+        value:
+          serializer: io.quarkus.kafka.client.serialization.ObjectMapperSerializer
+        key:
+          serializer: org.apache.kafka.common.serialization.StringSerializer
+        acks: 1
+        retries: 3
+        max:
+          in:
+            flight:
+              requests:
+                per:
+                  connection: 5
