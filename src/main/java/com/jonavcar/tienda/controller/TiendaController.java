@@ -77,7 +77,7 @@ public class TiendaController {
     LOG.infof("Session validated for user: %s, tenant: %s", session.getUsername(),
         session.getTenantId());*/
     var s = signModeToDescriptionConfig.modes();
-    for(var entry : s.entrySet()) {
+    for (var entry : s.entrySet()) {
       LOG.infof("Sign mode: %d => %s", entry.getKey(), entry.getValue());
     }
     return List.of();

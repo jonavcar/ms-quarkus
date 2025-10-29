@@ -151,3 +151,17 @@ application:
       '701': "Transferencia a terceros BCP"
     template-id: ${r_template_id}
     template-type: "idTemplate"
+
+# Configuración de Redis
+redis:
+  host: localhost
+  port: 6379
+  password: ${REDIS_PASSWORD:}
+  timeout: 10000
+  database: 0
+  connection-pool-size: 64
+  connection-minimum-idle-size: 10
+  idle-connection-timeout: 10000
+  connect-timeout: 10000
+  retry-attempts: 3
+  retry-interval: 1500
