@@ -1,5 +1,6 @@
 package com.jonavcar.tienda.controller;
 
+import com.jonavcar.tienda.config.ProductQueryParamsConfig;
 import com.jonavcar.tienda.dto.SessionDto;
 import com.jonavcar.tienda.model.Cliente;
 import com.jonavcar.tienda.model.Usuario;
@@ -27,6 +28,9 @@ public class TiendaController {
 
     @Inject
     SessionValidationService sessionValidationService;
+
+    @Inject
+    ProductQueryParamsConfig productQueryParamsConfig;
 
     @Inject
     UsuarioService usuarioService;
