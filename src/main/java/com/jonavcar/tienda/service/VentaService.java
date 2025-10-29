@@ -45,9 +45,10 @@ public class VentaService {
     try {
       ventaKafkaProducer.publishVentaCreatedEvent(venta)
           .exceptionally(throwable -> {
-              LOG.warnf(throwable, "Event publication failed for venta: id=%s. Event will be lost.", venta.getId());
-              // TODO: Implementar patrón Outbox o Dead Letter Queue para eventos fallidos
-              return null;
+            LOG.warnf(throwable, "Event publication failed for venta: id=%s. Event will be lost.",
+                venta.getId());
+            // TODO: Implementar patrón Outbox o Dead Letter Queue para eventos fallidos
+            return null;
           });
     } catch (Exception e) {
       LOG.errorf(e, "Unexpected error publishing event for venta: id=%s", venta.getId());

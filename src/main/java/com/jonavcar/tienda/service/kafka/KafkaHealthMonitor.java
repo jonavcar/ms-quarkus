@@ -16,27 +16,27 @@ import org.jboss.logging.Logger;
 @ApplicationScoped
 public class KafkaHealthMonitor {
 
-    private static final Logger LOG = Logger.getLogger(KafkaHealthMonitor.class);
+  private static final Logger LOG = Logger.getLogger(KafkaHealthMonitor.class);
 
-    @Inject
-    @Channel("ventas-out")
-    Emitter<?> ventasEmitter;
+  @Inject
+  @Channel("ventas-out")
+  Emitter<?> ventasEmitter;
 
-    void onStart(@Observes StartupEvent event) {
-        LOG.info("Kafka producers initialized");
-        checkEmitterHealth("ventas-out", ventasEmitter);
+  void onStart(@Observes StartupEvent event) {
+    LOG.info("Kafka producers initialized");
+    checkEmitterHealth("ventas-out", ventasEmitter);
+  }
+
+  void onStop(@Observes ShutdownEvent event) {
+    LOG.info("Shutting down Kafka producers");
+  }
+
+  private void checkEmitterHealth(String channelName, Emitter<?> emitter) {
+    if (emitter.isCancelled()) {
+      LOG.warnf("Emitter for channel '%s' is cancelled", channelName);
+    } else {
+      LOG.infof("Emitter for channel '%s' is ready", channelName);
     }
-
-    void onStop(@Observes ShutdownEvent event) {
-        LOG.info("Shutting down Kafka producers");
-    }
-
-    private void checkEmitterHealth(String channelName, Emitter<?> emitter) {
-        if (emitter.isCancelled()) {
-            LOG.warnf("Emitter for channel '%s' is cancelled", channelName);
-        } else {
-            LOG.infof("Emitter for channel '%s' is ready", channelName);
-        }
-    }
+  }
 }
 

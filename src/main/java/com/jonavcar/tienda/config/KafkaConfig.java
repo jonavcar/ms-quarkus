@@ -7,17 +7,17 @@ import io.smallrye.config.WithName;
 @ConfigMapping(prefix = "kafka")
 public interface KafkaConfig {
 
-    @WithName("bootstrap.servers")
-    @WithDefault("localhost:9092")
-    String bootstrapServers();
+  @WithName("bootstrap.servers")
+  @WithDefault("localhost:9092")
+  String bootstrapServers();
 
-    @ConfigMapping(prefix = "topics")
-    interface Topics {
+  Topics topics();
 
-        @WithName("ventas")
-        @WithDefault("ventas-events")
-        String ventas();
-    }
+  @ConfigMapping(prefix = "topics")
+  interface Topics {
 
-    Topics topics();
+    @WithName("ventas")
+    @WithDefault("ventas-events")
+    String ventas();
+  }
 }
