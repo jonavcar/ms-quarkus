@@ -1,0 +1,225 @@
+openapi: 3.0.3
+info:
+  title: Client Service API
+  description: External client service for querying customer information
+  version: 1.0.0
+  contact:
+    name: Client Service Team
+
+servers:
+  - url: https://api.clients.example.com/api/v1
+    description: Production server
+  - url: https://api-staging.clients.example.com/api/v1
+    description: Staging server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /clients/search:
+    post:
+      operationId: searchClients
+      summary: Search clients by criteria
+      description: Search clients by names or national identification number (DNI)
+      tags:
+        - Clients
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - $ref: '#/components/parameters/SessionUuidHeader'
+        - $ref: '#/components/parameters/CallerNameHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientSearchRequest'
+            examples:
+              searchByNames:
+                summary: Search by client names
+                value:
+                  names: "John Smith"
+              searchByDni:
+                summary: Search by DNI
+                value:
+                  dni: "12345678"
+      responses:
+        '200':
+          description: Client found successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientSearchResponse'
+              examples:
+                success:
+                  summary: Successful search result
+                  value:
+                    names: "John Smith"
+                    dni: "12345678"
+                    address: "123 Main Street, Springfield"
+                    phone: "+1-555-0123"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+
+  parameters:
+    RequestIdHeader:
+      name: request-id
+      in: header
+      required: true
+      description: Unique identifier for request tracing
+      schema:
+        type: string
+        format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+    SessionUuidHeader:
+      name: session-uuid
+      in: header
+      required: true
+      description: User session identifier
+      schema:
+        type: string
+        format: uuid
+      example: "123e4567-e89b-12d3-a456-426614174000"
+
+    CallerNameHeader:
+      name: caller-name
+      in: header
+      required: true
+      description: Name of the calling service or application
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+      example: "sales-service"
+
+  schemas:
+    ClientSearchRequest:
+      type: object
+      description: Search criteria for clients
+      properties:
+        names:
+          type: string
+          description: Client full name (partial match supported)
+          minLength: 1
+          maxLength: 200
+          example: "John Smith"
+        dni:
+          type: string
+          description: National identification number (DNI)
+          pattern: '^\d{8,15}$'
+          example: "12345678"
+      anyOf:
+        - required: [names]
+        - required: [dni]
+
+    ClientSearchResponse:
+      type: object
+      required:
+        - names
+        - dni
+        - address
+        - phone
+      properties:
+        names:
+          type: string
+          description: Client full name
+          example: "John Smith"
+        dni:
+          type: string
+          description: National identification number
+          example: "12345678"
+        address:
+          type: string
+          description: Client residential address
+          example: "123 Main Street, Springfield"
+        phone:
+          type: string
+          description: Client contact phone number
+          pattern: '^\+?[\d\s\-()]+$'
+          example: "+1-555-0123"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Invalid request parameters"
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error context
+        timestamp:
+          type: string
+          format: date-time
+          description: Error occurrence timestamp
+        traceId:
+          type: string
+          description: Unique identifier for error tracing
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "VALIDATION_ERROR"
+            message: "Request validation failed"
+            timestamp: "2025-11-08T13:00:00Z"
+
+    Unauthorized:
+      description: Authentication required or failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "UNAUTHORIZED"
+            message: "Invalid or missing authentication token"
+            timestamp: "2025-11-08T13:00:00Z"
+
+    NotFound:
+      description: Client not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "CLIENT_NOT_FOUND"
+            message: "No client found matching the search criteria"
+            timestamp: "2025-11-08T13:00:00Z"
+
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "INTERNAL_SERVER_ERROR"
+            message: "An unexpected error occurred"
+            timestamp: "2025-11-08T13:00:00Z"

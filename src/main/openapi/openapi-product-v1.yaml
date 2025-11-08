@@ -1,0 +1,231 @@
+openapi: 3.0.3
+info:
+  title: Product Service API
+  description: External product service for querying product information
+  version: 1.0.0
+  contact:
+    name: Product Service Team
+
+servers:
+  - url: https://api.products.example.com/api/v1
+    description: Production server
+  - url: https://api-staging.products.example.com/api/v1
+    description: Staging server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /products/search:
+    post:
+      operationId: searchProducts
+      summary: Search products by criteria
+      description: Search products by name or product code
+      tags:
+        - Products
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - $ref: '#/components/parameters/SessionUuidHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductSearchRequest'
+            examples:
+              searchByName:
+                summary: Search by product name
+                value:
+                  name: "Laptop"
+              searchByCode:
+                summary: Search by product code
+                value:
+                  code: "PROD-12345"
+      responses:
+        '200':
+          description: Products found successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductSearchResponse'
+              examples:
+                success:
+                  summary: Successful search result
+                  value:
+                    products:
+                      - code: "PROD-12345"
+                        name: "Laptop Pro 15"
+                        price: 1299.99
+                        discount: 10.0
+                        stock: 25
+                      - code: "PROD-12346"
+                        name: "Laptop Air 13"
+                        price: 999.99
+                        discount: 5.0
+                        stock: 50
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+
+  parameters:
+    RequestIdHeader:
+      name: request-id
+      in: header
+      required: true
+      description: Unique identifier for request tracing
+      schema:
+        type: string
+        format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+    SessionUuidHeader:
+      name: session-uuid
+      in: header
+      required: true
+      description: User session identifier
+      schema:
+        type: string
+        format: uuid
+      example: "123e4567-e89b-12d3-a456-426614174000"
+
+  schemas:
+    ProductSearchRequest:
+      type: object
+      description: Search criteria for products
+      properties:
+        name:
+          type: string
+          description: Product name to search (partial match supported)
+          minLength: 1
+          maxLength: 200
+          example: "Laptop"
+        code:
+          type: string
+          description: Exact product code to search
+          pattern: '^[A-Z0-9-]+$'
+          minLength: 1
+          maxLength: 50
+          example: "PROD-12345"
+      anyOf:
+        - required: [name]
+        - required: [code]
+
+    ProductSearchResponse:
+      type: object
+      required:
+        - products
+      properties:
+        products:
+          type: array
+          description: List of products matching search criteria
+          items:
+            $ref: '#/components/schemas/Product'
+
+    Product:
+      type: object
+      required:
+        - code
+        - name
+        - price
+        - discount
+        - stock
+      properties:
+        code:
+          type: string
+          description: Unique product code
+          example: "PROD-12345"
+        name:
+          type: string
+          description: Product name
+          example: "Laptop Pro 15"
+        price:
+          type: number
+          format: double
+          description: Product unit price
+          minimum: 0
+          example: 1299.99
+        discount:
+          type: number
+          format: double
+          description: Discount percentage applied
+          minimum: 0
+          maximum: 100
+          example: 10.0
+        stock:
+          type: integer
+          format: int32
+          description: Available stock quantity
+          minimum: 0
+          example: 25
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Invalid request parameters"
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error context
+        timestamp:
+          type: string
+          format: date-time
+          description: Error occurrence timestamp
+        traceId:
+          type: string
+          description: Unique identifier for error tracing
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "VALIDATION_ERROR"
+            message: "Request validation failed"
+            timestamp: "2025-11-08T13:00:00Z"
+
+    Unauthorized:
+      description: Authentication required or failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "UNAUTHORIZED"
+            message: "Invalid or missing authentication token"
+            timestamp: "2025-11-08T13:00:00Z"
+
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "INTERNAL_SERVER_ERROR"
+            message: "An unexpected error occurred"
+            timestamp: "2025-11-08T13:00:00Z"

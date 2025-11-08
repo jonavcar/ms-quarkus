@@ -1,0 +1,142 @@
+quarkus:
+  application:
+    name: ms-quarkus
+    version: 1.0.0-SNAPSHOT
+
+  virtual-threads:
+    enabled: true
+
+  http:
+    port: 8080
+    host: 0.0.0.0
+    cors:
+      enabled: true
+      origins: "*"
+      methods: GET,POST,PUT,DELETE,OPTIONS,PATCH
+      headers: accept,authorization,content-type,x-requested-with,request-id,session-uuid,app-code,caller-name
+      exposed-headers: "*"
+    access-log:
+      enabled: true
+      pattern: combined
+
+  rest-client:
+    "com.example.client.product.api.DefaultApi":
+      url: https://api.products.example.com/api/v1
+      scope: jakarta.inject.Singleton
+      connect-timeout: 5000
+      read-timeout: 30000
+    client-service:
+      url: http://localhost:3000/api/v1
+      scope: jakarta.inject.Singleton
+      connect-timeout: 5000
+      read-timeout: 30000
+
+  redisson:
+    single-server-config:
+      address: redis://localhost:6379
+      database: 0
+      connection-pool-size: 64
+      connection-minimum-idle-size: 10
+      timeout: 3000
+      retry-attempts: 3
+      retry-interval: 1500
+    threads: 16
+    netty-threads: 32
+
+  smallrye-openapi:
+    path: /openapi
+    info-title: Sales Management API
+    info-version: 1.0.0
+    info-description: API for managing products, clients, and sales
+
+  swagger-ui:
+    always-include: true
+    path: /swagger-ui
+
+  jackson:
+    fail-on-unknown-properties: false
+    write-dates-as-timestamps: false
+    serialization-inclusion: non_null
+
+  hibernate-validator:
+    method-validation:
+      allow-overriding-parameter-constraints: true
+
+  fault-tolerance:
+    enabled: true
+
+  smallrye-health:
+    root-path: /health
+
+  micrometer:
+    enabled: true
+    export:
+      prometheus:
+        enabled: true
+        path: /metrics
+    binder:
+      http-server:
+        enabled: true
+      http-client:
+        enabled: true
+
+  log:
+    level: INFO
+    console:
+      format: '%d{HH:mm:ss.SSS} %-5p [%c{2.}] (%t) %s%e%n'
+      color: true
+    category:
+      "com.example":
+        level: DEBUG
+      "io.quarkus":
+        level: INFO
+
+  smallrye-context-propagation:
+    enabled: true
+
+application:
+  errors:
+    UNAUTHORIZED:
+      code: "MC001"
+      description: "No está autorizado para realizar esta operación"
+      http-status: 401
+    NOT_FOUND:
+      code: "MC004"
+      description: "Recurso no encontrado"
+      http-status: 404
+    UNEXPECTED:
+      code: "MC003"
+      description: "Ocurrió un error inesperado"
+      http-status: 500
+    SERVICE_UNAVAILABLE:
+      code: "MC005"
+      description: "Servicio externo no disponible"
+      http-status: 503
+    BAD_REQUEST:
+      code: "MC006"
+      description: "Validación fallida"
+      http-status: 400
+
+  resolver:
+    client-v1:
+      CL001: "UNAUTHORIZED"
+      CL002: "NOT_FOUND"
+      CL003: "UNEXPECTED"
+      CL004: "SERVICE_UNAVAILABLE"
+    product-v1:
+      PR001: "UNAUTHORIZED"
+      PR002: "NOT_FOUND"
+      PR003: "UNEXPECTED"
+      PR004: "SERVICE_UNAVAILABLE"
+    http-status:
+      "401": "UNAUTHORIZED"
+      "404": "NOT_FOUND"
+      "500": "UNEXPECTED"
+      "503": "SERVICE_UNAVAILABLE"
+
+org:
+  eclipse:
+    microprofile:
+      rest:
+        client:
+          propagateHeaders: Authorization,request-id,session-uuid

@@ -1,0 +1,681 @@
+openapi: 3.0.3
+info:
+  title: Sales Management API
+  description: Comprehensive API for managing products, clients, and sales operations
+  version: 1.0.0
+  contact:
+    name: Sales Management Team
+    email: support@example.com
+
+servers:
+  - url: https://api.sales.example.com/api/v1
+    description: Production server
+  - url: https://api-staging.sales.example.com/api/v1
+    description: Staging server
+  - url: http://localhost:8080/api/v1
+    description: Local development server
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Products
+    description: Product search operations
+  - name: Clients
+    description: Client search operations
+  - name: Sales
+    description: Sales management operations
+
+paths:
+  /sales/products/search:
+    post:
+      operationId: searchProducts
+      summary: Search products by criteria
+      description: Search products by name or product code
+      tags:
+        - Products
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - $ref: '#/components/parameters/SessionUuidHeader'
+        - $ref: '#/components/parameters/AppCodeHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductSearchRequest'
+            examples:
+              searchByName:
+                summary: Search by product name
+                value:
+                  name: "Laptop"
+              searchByCode:
+                summary: Search by product code
+                value:
+                  code: "PROD-12345"
+      responses:
+        '200':
+          description: Products found successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductSearchResponse'
+              examples:
+                success:
+                  summary: Successful search result
+                  value:
+                    products:
+                      - code: "PROD-12345"
+                        name: "Laptop Pro 15"
+                        price: 1299.99
+                        status: "AVAILABLE"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sales/clients/search:
+    post:
+      operationId: searchClients
+      summary: Search clients by criteria
+      description: Search clients by DNI or full names
+      tags:
+        - Clients
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - $ref: '#/components/parameters/SessionUuidHeader'
+        - $ref: '#/components/parameters/AppCodeHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientSearchRequest'
+            examples:
+              searchByDni:
+                summary: Search by DNI
+                value:
+                  dni: "12345678"
+              searchByNames:
+                summary: Search by names
+                value:
+                  names: "John Smith"
+      responses:
+        '200':
+          description: Client found successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientSearchResponse'
+              examples:
+                success:
+                  summary: Successful search result
+                  value:
+                    names: "John Smith"
+                    dni: "12345678"
+                    address: "123 Main Street, Springfield"
+                    phone: "+1-555-0123"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sales/sales/search:
+    post:
+      operationId: searchSales
+      summary: Search sales by criteria
+      description: Search sales by date, client DNI, or operation code
+      tags:
+        - Sales
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - $ref: '#/components/parameters/SessionUuidHeader'
+        - $ref: '#/components/parameters/AppCodeHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaleSearchRequest'
+            examples:
+              searchByDate:
+                summary: Search by date
+                value:
+                  date: "2025-11-08"
+              searchByDni:
+                summary: Search by client DNI
+                value:
+                  dni: "12345678"
+              searchByOpnCode:
+                summary: Search by operation code
+                value:
+                  opnCode: "OPN-2025-001234"
+      responses:
+        '200':
+          description: Sales found successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaleSearchResponse'
+              examples:
+                success:
+                  summary: Successful search result
+                  value:
+                    sales:
+                      - saleId: "sale-uuid-123"
+                        opnCode: "OPN-2025-001234"
+                        date: "2025-11-08T10:30:00Z"
+                        dni: "12345678"
+                        names: "John Smith"
+                        products:
+                          - code: "PROD-12345"
+                            name: "Laptop Pro 15"
+                            quantity: 2
+                            amount: 2599.98
+                        discount: 10.0
+                        subtotal: 2599.98
+                        total: 2339.98
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sales/sales:
+    post:
+      operationId: createSale
+      summary: Create a new sale
+      description: Register a new sale transaction in the system
+      tags:
+        - Sales
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - $ref: '#/components/parameters/SessionUuidHeader'
+        - $ref: '#/components/parameters/AppCodeHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSaleRequest'
+            examples:
+              newSale:
+                summary: Create new sale
+                value:
+                  dni: "12345678"
+                  names: "John Smith"
+                  products:
+                    - code: "PROD-12345"
+                      quantity: 2
+                      amount: 2599.98
+                  discount: 10.0
+                  subtotal: 2599.98
+                  total: 2339.98
+      responses:
+        '201':
+          description: Sale created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateSaleResponse'
+              examples:
+                success:
+                  summary: Sale created
+                  value:
+                    saleId: "sale-uuid-123"
+                    opnCode: "OPN-2025-001234"
+                    date: "2025-11-08T10:30:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+
+  parameters:
+    RequestIdHeader:
+      name: request-id
+      in: header
+      required: true
+      description: Unique identifier for request tracing across services
+      schema:
+        type: string
+        format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+    SessionUuidHeader:
+      name: session-uuid
+      in: header
+      required: true
+      description: User session identifier for tracking user interactions
+      schema:
+        type: string
+        format: uuid
+      example: "123e4567-e89b-12d3-a456-426614174000"
+
+    AppCodeHeader:
+      name: app-code
+      in: header
+      required: true
+      description: Application code identifying the calling application
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 50
+        pattern: '^[A-Z0-9_-]+$'
+      example: "MOBILE_APP_V1"
+
+  schemas:
+    # Product Schemas
+    ProductSearchRequest:
+      type: object
+      description: Search criteria for products
+      properties:
+        name:
+          type: string
+          description: Product name to search (partial match supported)
+          minLength: 1
+          maxLength: 200
+          example: "Laptop"
+        code:
+          type: string
+          description: Exact product code to search
+          pattern: '^[A-Z0-9-]+$'
+          minLength: 1
+          maxLength: 50
+          example: "PROD-12345"
+      anyOf:
+        - required: [name]
+        - required: [code]
+
+    ProductSearchResponse:
+      type: object
+      required:
+        - products
+      properties:
+        products:
+          type: array
+          description: List of products matching search criteria
+          items:
+            $ref: '#/components/schemas/ProductSummary'
+
+    ProductSummary:
+      type: object
+      required:
+        - code
+        - name
+        - price
+        - status
+      properties:
+        code:
+          type: string
+          description: Unique product code
+          example: "PROD-12345"
+        name:
+          type: string
+          description: Product name
+          example: "Laptop Pro 15"
+        price:
+          type: number
+          format: double
+          description: Product unit price
+          minimum: 0
+          example: 1299.99
+        status:
+          type: string
+          description: Product availability status
+          enum:
+            - AVAILABLE
+            - OUT_OF_STOCK
+            - DISCONTINUED
+          example: "AVAILABLE"
+
+    # Client Schemas
+    ClientSearchRequest:
+      type: object
+      description: Search criteria for clients
+      properties:
+        dni:
+          type: string
+          description: National identification number (DNI)
+          pattern: '^\d{8,15}$'
+          example: "12345678"
+        names:
+          type: string
+          description: Client full name (partial match supported)
+          minLength: 1
+          maxLength: 200
+          example: "John Smith"
+      anyOf:
+        - required: [dni]
+        - required: [names]
+
+    ClientSearchResponse:
+      type: object
+      required:
+        - names
+        - dni
+        - address
+        - phone
+      properties:
+        names:
+          type: string
+          description: Client full name
+          example: "John Smith"
+        dni:
+          type: string
+          description: National identification number
+          example: "12345678"
+        address:
+          type: string
+          description: Client residential address
+          example: "123 Main Street, Springfield"
+        phone:
+          type: string
+          description: Client contact phone number
+          pattern: '^\+?[\d\s\-()]+$'
+          example: "+1-555-0123"
+
+    # Sale Schemas
+    SaleSearchRequest:
+      type: object
+      description: Search criteria for sales
+      properties:
+        date:
+          type: string
+          format: date
+          description: Sale date to search
+          example: "2025-11-08"
+        dni:
+          type: string
+          description: Client DNI to search sales
+          pattern: '^\d{8,15}$'
+          example: "12345678"
+        opnCode:
+          type: string
+          description: Operation code to search specific sale
+          pattern: '^OPN-\d{4}-\d{6}$'
+          example: "OPN-2025-001234"
+      anyOf:
+        - required: [date]
+        - required: [dni]
+        - required: [opnCode]
+
+    SaleSearchResponse:
+      type: object
+      required:
+        - sales
+      properties:
+        sales:
+          type: array
+          description: List of sales matching search criteria
+          items:
+            $ref: '#/components/schemas/SaleDetail'
+
+    SaleDetail:
+      type: object
+      required:
+        - saleId
+        - opnCode
+        - date
+        - dni
+        - names
+        - products
+        - discount
+        - subtotal
+        - total
+      properties:
+        saleId:
+          type: string
+          format: uuid
+          description: Unique sale identifier
+          example: "sale-uuid-123"
+        opnCode:
+          type: string
+          description: Operation code for sale tracking
+          example: "OPN-2025-001234"
+        date:
+          type: string
+          format: date-time
+          description: Sale transaction date and time
+          example: "2025-11-08T10:30:00Z"
+        dni:
+          type: string
+          description: Client national identification number
+          example: "12345678"
+        names:
+          type: string
+          description: Client full name
+          example: "John Smith"
+        products:
+          type: array
+          description: Products included in the sale
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/SaleProductItem'
+        discount:
+          type: number
+          format: double
+          description: Total discount percentage applied
+          minimum: 0
+          maximum: 100
+          example: 10.0
+        subtotal:
+          type: number
+          format: double
+          description: Subtotal before discount
+          minimum: 0
+          example: 2599.98
+        total:
+          type: number
+          format: double
+          description: Total amount after discount
+          minimum: 0
+          example: 2339.98
+
+    CreateSaleRequest:
+      type: object
+      required:
+        - dni
+        - names
+        - products
+        - discount
+        - subtotal
+        - total
+      properties:
+        dni:
+          type: string
+          description: Client national identification number
+          pattern: '^\d{8,15}$'
+          example: "12345678"
+        names:
+          type: string
+          description: Client full name
+          minLength: 1
+          maxLength: 200
+          example: "John Smith"
+        products:
+          type: array
+          description: Products to include in the sale
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/SaleProductItem'
+        discount:
+          type: number
+          format: double
+          description: Total discount percentage to apply
+          minimum: 0
+          maximum: 100
+          example: 10.0
+        subtotal:
+          type: number
+          format: double
+          description: Subtotal before discount
+          minimum: 0
+          example: 2599.98
+        total:
+          type: number
+          format: double
+          description: Total amount after discount
+          minimum: 0
+          example: 2339.98
+
+    CreateSaleResponse:
+      type: object
+      required:
+        - saleId
+        - opnCode
+        - date
+      properties:
+        saleId:
+          type: string
+          format: uuid
+          description: Unique sale identifier
+          example: "sale-uuid-123"
+        opnCode:
+          type: string
+          description: Generated operation code
+          example: "OPN-2025-001234"
+        date:
+          type: string
+          format: date-time
+          description: Sale creation timestamp
+          example: "2025-11-08T10:30:00Z"
+
+    SaleProductItem:
+      type: object
+      required:
+        - code
+        - name
+        - quantity
+        - amount
+      properties:
+        code:
+          type: string
+          description: Product code
+          example: "PROD-12345"
+        name:
+          type: string
+          description: Product name
+          example: "Laptop Pro 15"
+        quantity:
+          type: integer
+          format: int32
+          description: Quantity of products
+          minimum: 1
+          example: 2
+        amount:
+          type: number
+          format: double
+          description: Total amount for this product line
+          minimum: 0
+          example: 2599.98
+
+    # Error Schema
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Invalid request parameters"
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error context and field-level errors
+        timestamp:
+          type: string
+          format: date-time
+          description: Error occurrence timestamp
+        traceId:
+          type: string
+          description: Unique identifier for error tracing
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters or malformed request body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "VALIDATION_ERROR"
+            message: "Request validation failed"
+            details:
+              field: "dni"
+              issue: "Must be between 8 and 15 digits"
+            timestamp: "2025-11-08T13:00:00Z"
+            traceId: "550e8400-e29b-41d4-a716-446655440000"
+
+    Unauthorized:
+      description: Authentication required or failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "UNAUTHORIZED"
+            message: "Invalid or missing authentication token"
+            timestamp: "2025-11-08T13:00:00Z"
+            traceId: "550e8400-e29b-41d4-a716-446655440000"
+
+    NotFound:
+      description: Requested resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "RESOURCE_NOT_FOUND"
+            message: "No records found matching the search criteria"
+            timestamp: "2025-11-08T13:00:00Z"
+            traceId: "550e8400-e29b-41d4-a716-446655440000"
+
+    Conflict:
+      description: Request conflicts with current state
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "CONFLICT"
+            message: "Sale already exists or resource conflict detected"
+            timestamp: "2025-11-08T13:00:00Z"
+            traceId: "550e8400-e29b-41d4-a716-446655440000"
+
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "INTERNAL_SERVER_ERROR"
+            message: "An unexpected error occurred while processing the request"
+            timestamp: "2025-11-08T13:00:00Z"
+            traceId: "550e8400-e29b-41d4-a716-446655440000"
