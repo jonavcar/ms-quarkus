@@ -1,4 +1,4 @@
-package com.jonavcar.common;
+package com.jonavcar.exception;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;

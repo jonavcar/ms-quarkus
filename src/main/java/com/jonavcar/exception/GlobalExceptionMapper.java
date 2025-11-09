@@ -1,4 +1,4 @@
-package com.jonavcar.common;
+package com.jonavcar.exception;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;

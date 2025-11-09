@@ -1,4 +1,4 @@
-package com.jonavcar.common;
+package com.jonavcar.exception;
 
 import java.time.OffsetDateTime;
 import java.util.Map;

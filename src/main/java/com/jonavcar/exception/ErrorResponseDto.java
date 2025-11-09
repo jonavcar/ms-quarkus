@@ -1,4 +1,4 @@
-package com.jonavcar.common;
+package com.jonavcar.exception;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Collections;
