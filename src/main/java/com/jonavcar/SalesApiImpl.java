@@ -28,7 +28,7 @@ public class SalesApiImpl implements SalesApi {
         new com.example.client.clientservice.model.ClientSearchRequest();
     clientSearchReques1t.setDni(clientSearchReques1t.getDni());
     clientSearchReques1t.setNames(clientSearchRequest.getNames());
-    var x = clientProxy.searchClients(requestId, sessionUuid, "mipoi", clientSearchReques1t);
+    var x = clientProxy.searchClients(null, null, null, clientSearchReques1t);
     return null;
   }
 
