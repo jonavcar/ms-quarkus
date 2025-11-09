@@ -7,7 +7,7 @@ import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 
-@RegisterRestClient(configKey = "client-service")
+@RegisterRestClient
 @RegisterProvider(UnifiedApiExceptionMapper.class)
 public interface ClientProxy extends ClientsApi {
 }

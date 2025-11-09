@@ -10,11 +10,13 @@ import com.example.server.model.ProductSearchResponse;
 import com.example.server.model.SaleSearchRequest;
 import com.example.server.model.SaleSearchResponse;
 import com.jonavcar.proxy.ClientProxy;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.UUID;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 
+@ApplicationScoped
 public class SalesApiImpl implements SalesApi {
 
   @Inject
@@ -24,11 +26,11 @@ public class SalesApiImpl implements SalesApi {
   @Override
   public ClientSearchResponse searchClients(UUID requestId, UUID sessionUuid, String appCode,
                                             ClientSearchRequest clientSearchRequest) {
-    com.example.client.clientservice.model.ClientSearchRequest clientSearchReques1t =
+    com.example.client.clientservice.model.ClientSearchRequest clientSearchRequest1 =
         new com.example.client.clientservice.model.ClientSearchRequest();
-    clientSearchReques1t.setDni(clientSearchReques1t.getDni());
-    clientSearchReques1t.setNames(clientSearchRequest.getNames());
-    var x = clientProxy.searchClients(null, null, null, clientSearchReques1t);
+    clientSearchRequest1.setDni(clientSearchRequest.getDni());
+    clientSearchRequest1.setNames(clientSearchRequest.getNames());
+    var x = clientProxy.searchClients(null, null, null, clientSearchRequest1);
     return null;
   }
 

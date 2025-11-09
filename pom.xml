@@ -58,6 +58,12 @@
             <artifactId>quarkus-rest-jackson</artifactId>
         </dependency>
 
+        <!-- ===== VIRTUAL THREADS SUPPORT ===== -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-virtual-threads</artifactId>
+        </dependency>
+
         <!-- ===== MICROPROFILE REST CLIENT ===== -->
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -106,6 +112,12 @@
             <artifactId>quarkus-smallrye-fault-tolerance</artifactId>
         </dependency>
 
+        <!-- ===== CONTEXT PROPAGATION ===== -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-context-propagation</artifactId>
+        </dependency>
+
         <!-- ===== OBSERVABILITY ===== -->
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -140,6 +152,7 @@
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5-mockito</artifactId>
