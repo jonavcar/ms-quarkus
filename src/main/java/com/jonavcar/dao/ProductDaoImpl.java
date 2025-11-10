@@ -1,5 +1,6 @@
 package com.jonavcar.dao;
 
+import com.example.client.product.api.ApiException;
 import com.example.client.product.model.ProductSearchResponse;
 import com.jonavcar.proxy.ProductProxy;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -13,7 +14,12 @@ public class ProductDaoImpl {
   ProductProxy productProxy;
 
   public ProductSearchResponse getProducts() {
-    return productProxy.searchProducts(null, null, null);
+    try {
+      var x = productProxy.searchProducts(null, null, null);
+      return x;
+    } catch (ApiException e) {
+      throw e;
+    }
   }
 
 }
