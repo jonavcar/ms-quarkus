@@ -63,6 +63,11 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-virtual-threads</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <version>3.50.0</version>
+        </dependency>
 
         <!-- ===== MICROPROFILE REST CLIENT ===== -->
         <dependency>
@@ -94,17 +99,7 @@
         </dependency>
 
         <!-- ===== REDIS - REDISSON CLIENT ===== -->
-        <dependency>
-            <groupId>org.redisson</groupId>
-            <artifactId>redisson-quarkus-30</artifactId>
-            <version>${redisson.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.quarkus</groupId>
-                    <artifactId>quarkus-arc</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+
 
         <!-- ===== FAULT TOLERANCE ===== -->
         <dependency>
