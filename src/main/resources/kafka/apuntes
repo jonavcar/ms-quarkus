@@ -1,0 +1,7 @@
+D:\tools\kafka\bin\windows>kafka-storage.bat random-uuid
+2025-11-14T13:53:29.489305900Z main ERROR Reconfiguration failed: No configuration found for '2c7b84de' at 'null' in 'null'
+hcLumtnMRECiILoLhI6glA
+
+D:\tools\kafka\bin\windows>kafka-storage.bat format --standalone -t hcLumtnMRECiILoLhI6glA -c D:\tools\kafka\config\kraft-server.properties
+2025-11-14T13:53:44.397577200Z main ERROR Reconfiguration failed: No configuration found for '2c7b84de' at 'null' in 'null'
+Formatting dynamic metadata voter directory D:/tools/kafka/data/kraft-logs with metadata.version 4.1-IV1.
