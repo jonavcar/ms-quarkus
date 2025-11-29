@@ -255,6 +255,7 @@
                 </executions>
             </plugin>
 
+            <!--
             <plugin>
                 <groupId>com.google.code.maven-replacer-plugin</groupId>
                 <artifactId>replacer</artifactId>
@@ -291,6 +292,7 @@ import com.jonavcar.ecommerce.sales.exception.ApiExceptionMapper;
                     </execution>
                 </executions>
             </plugin>
+            -->
 
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>

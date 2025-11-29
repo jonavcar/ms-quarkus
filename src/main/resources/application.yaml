@@ -1,0 +1,609 @@
+# ============================================
+# MS-ECOMMERCE - PRODUCTION CONFIGURATION
+# ============================================
+quarkus:
+  application:
+    name: ms-ecommerce
+    version: 1.0.0-SNAPSHOT
+
+  # ============================================
+  # HTTP SERVER
+  # ============================================
+  http:
+    port: ${SERVER_PORT:8080}
+    http2: true
+    host: 0.0.0.0
+    cors:
+      ~: true
+      origins: ${CORS_ORIGINS:/https?://.*\.jonavcar\.com/}
+      methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
+      headers: accept,authorization,content-type,x-requested-with,x-request-id,x-correlation-id
+      exposed-headers: x-request-id,x-correlation-id
+      access-control-max-age: 24H
+    limits:
+      max-body-size: 10M
+      max-header-size: 20K
+      max-chunk-size: 8K
+    enable-compression: true
+    compression-level: 6
+    compress-media-types: text/html,text/plain,text/xml,text/css,text/javascript,application/javascript,application/json
+    ssl:
+      certificate:
+        key-store-file: ${SSL_KEYSTORE_FILE:}
+        key-store-password: ${SSL_KEYSTORE_PASSWORD:}
+        key-store-file-type: ${SSL_KEYSTORE_TYPE:PKCS12}
+    idle-timeout: 30M
+    read-timeout: 60s
+    body:
+      handle-file-uploads: true
+      uploads-directory: ${UPLOADS_DIR:/tmp/uploads}
+      delete-uploaded-files-on-end: true
+
+  # ============================================
+  # LOGGING
+  # ============================================
+  log:
+    level: INFO
+    min-level: DEBUG
+    console:
+      enable: true
+      format: "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n"
+      json: true
+      color: false
+    file:
+      enable: ${LOG_FILE_ENABLE:false}
+      path: ${LOG_FILE_PATH:/var/log/ms-ecommerce/application.log}
+      format: "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n"
+      rotation:
+        max-file-size: 100M
+        max-backup-index: 10
+        file-suffix: .yyyy-MM-dd
+        rotate-on-boot: true
+    category:
+      "com.jonavcar.ecommerce":
+        level: INFO
+      "com.jonavcar.ecommerce.sales":
+        level: INFO
+      "org.apache.kafka":
+        level: WARN
+      "io.quarkus":
+        level: INFO
+      "io.vertx":
+        level: WARN
+      "org.hibernate.validator":
+        level: INFO
+      "io.smallrye":
+        level: INFO
+      "org.jboss":
+        level: WARN
+
+  # ============================================
+  # OPENAPI / SWAGGER
+  # ============================================
+  smallrye-openapi:
+    path: /q/openapi
+    store-schema-directory: ${OPENAPI_STORE_DIR:target}
+    info-title: E-Commerce Sales API
+    info-version: 1.0.0
+    info-description: Microservicio de ventas con integración Kafka, Redis y servicios externos
+    info-contact-name: Jonavcar Development Team
+    info-contact-email: dev@jonavcar.com
+    info-contact-url: https://jonavcar.com
+    info-license-name: Apache 2.0
+    info-license-url: https://www.apache.org/licenses/LICENSE-2.0.html
+    servers: ${OPENAPI_SERVERS:https://api.jonavcar.com}
+    enable: true
+    auto-add-security: true
+    auto-add-tags: true
+    auto-add-security-requirement: true
+
+  swagger-ui:
+    enable: ${SWAGGER_UI_ENABLE:false}
+    always-include: false
+    path: /q/swagger-ui
+    urls-primary-name: Production API
+    title: E-Commerce Sales API Documentation
+    theme: feeling-blue
+
+  # ============================================
+  # KAFKA PRODUCER/CONSUMER
+  # ============================================
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    security:
+      protocol: ${KAFKA_SECURITY_PROTOCOL:SASL_SSL}
+    sasl:
+      mechanism: ${KAFKA_SASL_MECHANISM:SCRAM-SHA-512}
+      jaas-config: ${KAFKA_SASL_JAAS_CONFIG:}
+    ssl:
+      truststore-location: ${KAFKA_SSL_TRUSTSTORE_LOCATION:}
+      truststore-password: ${KAFKA_SSL_TRUSTSTORE_PASSWORD:}
+      truststore-type: ${KAFKA_SSL_TRUSTSTORE_TYPE:PKCS12}
+      keystore-location: ${KAFKA_SSL_KEYSTORE_LOCATION:}
+      keystore-password: ${KAFKA_SSL_KEYSTORE_PASSWORD:}
+      keystore-type: ${KAFKA_SSL_KEYSTORE_TYPE:PKCS12}
+    health:
+      enabled: true
+    snappy:
+      enabled: true
+
+  # ============================================
+  # REDIS CLIENT
+  # ============================================
+  redis:
+    hosts: ${REDIS_HOSTS:redis://localhost:6379}
+    password: ${REDIS_PASSWORD:}
+    database: ${REDIS_DATABASE:0}
+    client-type: ${REDIS_CLIENT_TYPE:standalone}
+    timeout: 10s
+    max-pool-size: 50
+    max-pool-waiting: 50
+    max-waiting-handlers: 2048
+    reconnect-attempts: 10
+    reconnect-interval: 1s
+    tcp-keep-alive: true
+    tcp-no-delay: true
+    ssl: ${REDIS_SSL:false}
+    trust-all: false
+    health:
+      enabled: true
+    replicas: ${REDIS_REPLICAS:never}
+    client-name: ms-ecommerce-sales
+
+  # ============================================
+  # REDIS CACHE
+  # ============================================
+  cache:
+    enabled: true
+    type: redis
+    redis:
+      ttl: 3600s
+      prefix: "ms-ecommerce:cache:"
+      use-optimistic-locking: false
+
+  # ============================================
+  # REST CLIENT - MICROPROFILE
+  # ============================================
+  rest-client:
+    "com.jonavcar.ecommerce.sales.proxy.DefaultApi":
+      url: ${CLIENT_V1_BASE_URL:http://localhost:8081}
+      scope: jakarta.inject.Singleton
+      connect-timeout: 10000
+      read-timeout: 30000
+      follow-redirects: false
+      proxy-address: ${CLIENT_V1_PROXY:}
+      proxy-user: ${CLIENT_V1_PROXY_USER:}
+      proxy-password: ${CLIENT_V1_PROXY_PASSWORD:}
+      max-redirects: 3
+      providers: com.jonavcar.ecommerce.sales.exception.ApiExceptionMapper
+      headers:
+        User-Agent: ms-ecommerce/1.0.0
+        Accept: application/json
+      trust-store: ${CLIENT_V1_TRUSTSTORE:}
+      trust-store-password: ${CLIENT_V1_TRUSTSTORE_PASSWORD:}
+      trust-store-type: ${CLIENT_V1_TRUSTSTORE_TYPE:PKCS12}
+      verify-host: true
+
+    "com.jonavcar.ecommerce.sales.proxy.ProductApi":
+      url: ${PRODUCT_API_BASE_URL:http://localhost:8082}
+      scope: jakarta.inject.Singleton
+      connect-timeout: 10000
+      read-timeout: 30000
+      follow-redirects: false
+      providers: com.jonavcar.ecommerce.sales.exception.ApiExceptionMapper
+      headers:
+        User-Agent: ms-ecommerce/1.0.0
+        Accept: application/json
+      trust-store: ${PRODUCT_API_TRUSTSTORE:}
+      trust-store-password: ${PRODUCT_API_TRUSTSTORE_PASSWORD:}
+      verify-host: true
+
+  rest-client-reactive:
+    scope: jakarta.inject.Singleton
+    user-agent: ms-ecommerce/1.0.0
+
+  # ============================================
+  # FAULT TOLERANCE
+  # ============================================
+  smallrye-faulttolerance:
+    enabled: true
+    global-backoff:
+      value: 1000
+      jitter: 0.2
+      max-value: 60000
+    mp-metrics:
+      enabled: true
+
+  # ============================================
+  # VAULT CONFIGURATION
+  # ============================================
+  vault:
+    url: ${VAULT_URL:http://localhost:8200}
+    authentication:
+      kubernetes:
+        role: ${VAULT_K8S_ROLE:ms-ecommerce-role}
+        auth-mount-path: ${VAULT_K8S_AUTH_PATH:kubernetes}
+        jwt-token-path: ${VAULT_K8S_JWT_PATH:/var/run/secrets/kubernetes.io/serviceaccount/token}
+      client-token: ${VAULT_TOKEN:}
+      client-token-wrapping-token: ${VAULT_WRAPPING_TOKEN:}
+      app-role:
+        role-id: ${VAULT_APPROLE_ROLE_ID:}
+        secret-id: ${VAULT_APPROLE_SECRET_ID:}
+    kv-secret-engine-version: 2
+    kv-secret-engine-mount-path: secret
+    secret-config-kv-path: ms-ecommerce/prod
+    secret-config-kv-path-v2:
+      - ms-ecommerce/common
+      - ms-ecommerce/prod
+    renew-grace-period: 3600s
+    secret-config-cache-period: 10M
+    log-confidentiality-level: low
+    tls:
+      skip-verify: ${VAULT_TLS_SKIP_VERIFY:false}
+      ca-cert: ${VAULT_CA_CERT:}
+      use-kubernetes-ca-cert: true
+    health:
+      enabled: true
+      standby-ok: true
+      performance-standby-ok: true
+    connect-timeout: 5s
+    read-timeout: 1s
+    transit:
+      key:
+        name: ${VAULT_TRANSIT_KEY:ms-ecommerce-key}
+      pki:
+        role: ${VAULT_PKI_ROLE:ms-ecommerce-pki}
+
+  # ============================================
+  # BEAN VALIDATION
+  # ============================================
+  hibernate-validator:
+    fail-fast: false
+    method-validation:
+      allow-overriding-parameter-constraints: false
+      allow-multiple-cascaded-validation-on-return-values: true
+      allow-parameter-constraints-on-parallel-methods: false
+    expression-language:
+      constraint-expression-feature-level: bean-properties
+
+  # ============================================
+  # HEALTH CHECKS
+  # ============================================
+  smallrye-health:
+    root-path: /q/health
+    liveness-path: /q/health/live
+    readiness-path: /q/health/ready
+    startup-path: /q/health/started
+    check:
+      "com.jonavcar.ecommerce.sales.health.*":
+        enabled: true
+    ui:
+      enable: ${HEALTH_UI_ENABLE:false}
+      root-path: /q/health-ui
+    group:
+      infrastructure:
+        include: kafka,redis,vault
+      external-services:
+        include: ".*client.*,.*product.*"
+
+  # ============================================
+  # MICROMETER METRICS
+  # ============================================
+  micrometer:
+    enabled: true
+    registry-enabled-default: true
+    binder-enabled-default: true
+    export:
+      prometheus:
+        enabled: true
+        path: /q/metrics
+        default-registry: true
+    binder:
+      jvm: true
+      system: true
+      http-server: true
+      http-client: true
+      kafka: true
+      redis: true
+      mp-metrics:
+        enabled: true
+
+  # ============================================
+  # OPENTELEMETRY TRACING
+  # ============================================
+  otel:
+    sdk:
+      disabled: false
+    service:
+      name: ms-ecommerce-sales
+      version: 1.0.0
+    traces:
+      enabled: true
+      sampler: parentbased_always_on
+      sampler-arg: 1.0
+    exporter:
+      otlp:
+        enabled: true
+        endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
+        protocol: grpc
+        timeout: 10s
+        headers: ${OTEL_EXPORTER_HEADERS:}
+    propagators: tracecontext,baggage,jaeger
+    resource:
+      attributes:
+        deployment.environment: ${ENVIRONMENT:production}
+        service.namespace: ecommerce
+        service.instance.id: ${HOSTNAME:unknown}
+
+  # ============================================
+  # THREAD POOL & VIRTUAL THREADS (JDK 21)
+  # ============================================
+  thread-pool:
+    core-threads: 1
+    max-threads: 200
+    growth-resistance: 0
+    queue-size: 10000
+    keep-alive-time: 30s
+
+  virtual-threads:
+    enabled: ${VIRTUAL_THREADS_ENABLED:true}
+    name-prefix: quarkus-virtual-thread-
+
+  # ============================================
+  # SHUTDOWN & LIFECYCLE
+  # ============================================
+  shutdown:
+    timeout: 30s
+
+  container-image:
+    build: false
+    builder: jib
+    registry: ${CONTAINER_REGISTRY:docker.io}
+    group: ${CONTAINER_GROUP:jonavcar}
+    name: ms-ecommerce
+    tag: ${CONTAINER_TAG:1.0.0-SNAPSHOT}
+    additional-tags: latest
+    labels:
+      version: 1.0.0-SNAPSHOT
+      maintainer: dev@jonavcar.com
+      description: E-Commerce Sales Microservice
+
+  # ============================================
+  # PACKAGE & BUILD
+  # ============================================
+  package:
+    type: fast-jar
+    compress: true
+    create-appcds: false
+    add-runner-suffix: true
+    runner-suffix: -runner
+    jar:
+      compress: true
+      manifest:
+        add-implementation-entries: true
+        attributes:
+          Built-By: Jonavcar CI/CD
+          Build-Timestamp: ${maven.build.timestamp}
+    user-configured-ignored-entries:
+      - "META-INF/MANIFEST.MF"
+
+  # ============================================
+  # SECURITY
+  # ============================================
+  security:
+    auth:
+      enabled-in-dev-mode: false
+    users:
+      embedded:
+        enabled: false
+
+  # ============================================
+  # JACKSON SERIALIZATION
+  # ============================================
+  jackson:
+    fail-on-unknown-properties: false
+    fail-on-empty-beans: false
+    write-dates-as-timestamps: false
+    timezone: UTC
+    serialization-inclusion: non-null
+
+# ============================================
+# KAFKA REACTIVE MESSAGING CHANNELS
+# ============================================
+mp:
+  messaging:
+    outgoing:
+      sales-orders-out:
+        connector: smallrye-kafka
+        topic: ${KAFKA_TOPIC_SALES_ORDERS:sales.orders.events.v1}
+        key:
+          serializer: org.apache.kafka.common.serialization.StringSerializer
+        value:
+          serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+        acks: all
+        retries: 2147483647
+        max-in-flight-requests-per-connection: 1
+        enable-idempotence: true
+        compression-type: snappy
+        linger-ms: 100
+        batch-size: 32768
+        buffer-memory: 33554432
+        request-timeout-ms: 30000
+        delivery-timeout-ms: 120000
+        max-block-ms: 60000
+        client-id: ${HOSTNAME:ms-ecommerce-producer}
+        apicurio:
+          registry:
+            url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+            auto-register: true
+            use-id: globalId
+
+      sales-payments-out:
+        connector: smallrye-kafka
+        topic: ${KAFKA_TOPIC_SALES_PAYMENTS:sales.payments.events.v1}
+        key:
+          serializer: org.apache.kafka.common.serialization.StringSerializer
+        value:
+          serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+        acks: all
+        retries: 2147483647
+        enable-idempotence: true
+        compression-type: snappy
+        linger-ms: 100
+        batch-size: 32768
+        client-id: ${HOSTNAME:ms-ecommerce-producer}
+        apicurio:
+          registry:
+            url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+            auto-register: true
+            use-id: globalId
+
+    incoming:
+      product-updates-in:
+        connector: smallrye-kafka
+        topic: ${KAFKA_TOPIC_PRODUCT_UPDATES:product.updates.events.v1}
+        group:
+          id: ${KAFKA_CONSUMER_GROUP:ms-ecommerce-sales-group}
+        key:
+          deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        value:
+          deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+        auto:
+          offset:
+            reset: earliest
+        enable:
+          auto:
+            commit: false
+        isolation-level: read_committed
+        max-poll-records: 500
+        max-poll-interval-ms: 300000
+        session-timeout-ms: 45000
+        heartbeat-interval-ms: 3000
+        fetch-min-bytes: 1
+        fetch-max-wait-ms: 500
+        client-id: ${HOSTNAME:ms-ecommerce-consumer}
+        failure-strategy: dead-letter-queue
+        dead-letter-queue:
+          topic: ${KAFKA_TOPIC_DLQ:sales.dlq.v1}
+          key:
+            serializer: org.apache.kafka.common.serialization.StringSerializer
+          value:
+            serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+        retry: true
+        retry-attempts: 3
+        retry-max-wait: 30s
+        apicurio:
+          registry:
+            url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+        specific:
+          avro:
+            reader: true
+
+      inventory-updates-in:
+        connector: smallrye-kafka
+        topic: ${KAFKA_TOPIC_INVENTORY_UPDATES:inventory.updates.events.v1}
+        group:
+          id: ${KAFKA_CONSUMER_GROUP:ms-ecommerce-sales-group}
+        key:
+          deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        value:
+          deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+        auto:
+          offset:
+            reset: earliest
+        enable:
+          auto:
+            commit: false
+        isolation-level: read_committed
+        max-poll-records: 500
+        session-timeout-ms: 45000
+        heartbeat-interval-ms: 3000
+        client-id: ${HOSTNAME:ms-ecommerce-consumer}
+        apicurio:
+          registry:
+            url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+        specific:
+          avro:
+            reader: true
+
+# ============================================
+# CONFLUENT SCHEMA REGISTRY
+# ============================================
+kafka:
+  schema:
+    registry:
+      url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+      basic:
+        auth:
+          credentials:
+            source: USER_INFO
+          user:
+            info: ${SCHEMA_REGISTRY_USER:}:${SCHEMA_REGISTRY_PASSWORD:}
+      auto:
+        register:
+          schemas: true
+      use:
+        latest:
+          version: true
+      cache:
+        capacity: 1000
+
+# ============================================
+# FAULT TOLERANCE PER METHOD
+# ============================================
+com:
+  jonavcar:
+    ecommerce:
+      sales:
+        proxy:
+          DefaultApi/getClientInfo:
+            Retry:
+              maxRetries: 3
+              delay: 1000
+              maxDuration: 10000
+              jitter: 0.25
+            Timeout:
+              value: 5000
+            CircuitBreaker:
+              requestVolumeThreshold: 10
+              failureRatio: 0.5
+              delay: 5000
+              successThreshold: 2
+          ProductApi/getProductById:
+            Retry:
+              maxRetries: 3
+              delay: 1000
+              maxDuration: 10000
+            Timeout:
+              value: 5000
+            CircuitBreaker:
+              requestVolumeThreshold: 10
+              failureRatio: 0.5
+              delay: 5000
+
+# ============================================
+# CUSTOM APPLICATION PROPERTIES
+# ============================================
+app:
+  name: MS E-Commerce Sales
+  version: 1.0.0-SNAPSHOT
+  environment: ${ENVIRONMENT:production}
+  correlation-id:
+    header-name: X-Correlation-ID
+    generate-if-missing: true
+  request-id:
+    header-name: X-Request-ID
+    generate-if-missing: true
+  business:
+    max-order-items: ${MAX_ORDER_ITEMS:100}
+    max-cart-ttl-minutes: ${CART_TTL_MINUTES:30}
+    currency: ${DEFAULT_CURRENCY:USD}
+    tax-rate: ${TAX_RATE:0.18}
+  features:
+    inventory-validation: ${FEATURE_INVENTORY_VALIDATION:true}
+    price-calculation: ${FEATURE_PRICE_CALCULATION:true}
+    payment-processing: ${FEATURE_PAYMENT_PROCESSING:true}
+  cache:
+    product-ttl-seconds: 3600
+    client-ttl-seconds: 1800
+    session-ttl-seconds: 1800
