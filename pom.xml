@@ -141,13 +141,17 @@
                         </goals>
                         <configuration>
                             <inputSpec>${project.basedir}/src/main/resources/openapi/openapi.yaml</inputSpec>
+                            <output>${project.build.directory}/generated-sources/openapi</output>
                             <generatorName>jaxrs-spec</generatorName>
                             <configOptions>
                                 <identifierNamingConvention>camelCase</identifierNamingConvention>
                                 <apiPackage>${project.groupId}.resource.web</apiPackage>
                                 <modelPackage>${project.groupId}.${server.resource}.model.api</modelPackage>
                                 <useJakartaEe>true</useJakartaEe>
+                                <dateLibrary>java8</dateLibrary>
+                                <sourceFolder>src/gen/java</sourceFolder>
                                 <useSwaggerAnnotations>false</useSwaggerAnnotations>
+                                <interfaceOnly>true</interfaceOnly>
                             </configOptions>
                         </configuration>
                     </execution>
@@ -179,6 +183,7 @@
                                 <implicitHeaders>true</implicitHeaders>
                                 <implicitHeadersRegex></implicitHeadersRegex>
                                 <useJakartaEe>true</useJakartaEe>
+                                <dateLibrary>java8</dateLibrary>
                             </configOptions>
                             <library>microprofile</library>
                         </configuration>
@@ -209,12 +214,14 @@
                                 <implicitHeaders>true</implicitHeaders>
                                 <implicitHeadersRegex></implicitHeadersRegex>
                                 <useJakartaEe>true</useJakartaEe>
+                                <dateLibrary>java8</dateLibrary>
                             </configOptions>
                             <library>microprofile</library>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${compiler-plugin.version}</version>
@@ -222,6 +229,30 @@
                     <parameters>true</parameters>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <id>add-generated-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>
+                                    ${project.build.directory}/generated-sources/openapi/src/gen/java</source>
+                                <source>
+                                    ${project.build.directory}/generated-sources/openapi/src/main/java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
