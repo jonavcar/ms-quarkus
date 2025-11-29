@@ -82,6 +82,21 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc</artifactId>
         </dependency>
+
+        <!-- Bean Validation -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-hibernate-validator</artifactId>
+        </dependency>
+
+        <!-- CXF Dependency for JAX-RS Frontend (No recommend)-->
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-frontend-jaxrs</artifactId>
+            <version>4.1.1</version>
+        </dependency>
+
+        <!-- Test Dependencies -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5</artifactId>
@@ -121,14 +136,18 @@
                     <execution>
                         <id>jonavcar-quarkus-core-openapi-generator-server</id>
                         <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
                         <configuration>
-                            <inputSpec>
-                                ${project.basedir}/src/main/resources/openapi/openapi.yaml
-                            </inputSpec>
+                            <inputSpec>${project.basedir}/src/main/resources/openapi/openapi.yaml</inputSpec>
+                            <generatorName>jaxrs-spec</generatorName>
                             <configOptions>
                                 <identifierNamingConvention>camelCase</identifierNamingConvention>
-                                <apiPackage>${project.groupId}.expose.web</apiPackage>
+                                <apiPackage>${project.groupId}.resource.web</apiPackage>
                                 <modelPackage>${project.groupId}.${server.resource}.model.api</modelPackage>
+                                <useJakartaEe>true</useJakartaEe>
+                                <useSwaggerAnnotations>false</useSwaggerAnnotations>
                             </configOptions>
                         </configuration>
                     </execution>
@@ -140,9 +159,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>
-                                src/main/resources/openapi/client/openapi-client-v1.yaml
-                            </inputSpec>
+                            <inputSpec>src/main/resources/openapi/client/openapi-client-v1.yaml</inputSpec>
                             <ignoreFileOverride>${project.basedir}/.openapi-generator-ignore</ignoreFileOverride>
                             <generateApiTests>false</generateApiTests>
                             <generateModelTests>false</generateModelTests>
@@ -151,8 +168,7 @@
                                 <apiPackage>${project.groupId}.${server.resource}.proxy</apiPackage>
                                 <configPackage>${project.groupId}.${server.resource}.config</configPackage>
                                 <modelPackage>
-                                    ${project.groupId}.${server.resource}.model.proxy.client
-                                </modelPackage>
+                                    ${project.groupId}.${server.resource}.model.proxy.client</modelPackage>
                                 <serializationLibrary>jackson</serializationLibrary>
                                 <useRuntimeException>true</useRuntimeException>
                                 <microprofileRestClientVersion>3.0</microprofileRestClientVersion>
@@ -162,6 +178,7 @@
                                 <useSingleRequestParameter>false</useSingleRequestParameter>
                                 <implicitHeaders>true</implicitHeaders>
                                 <implicitHeadersRegex></implicitHeadersRegex>
+                                <useJakartaEe>true</useJakartaEe>
                             </configOptions>
                             <library>microprofile</library>
                         </configuration>
@@ -172,9 +189,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>
-                                src/main/resources/openapi/client/openapi-product-v1.yaml
-                            </inputSpec>
+                            <inputSpec>src/main/resources/openapi/client/openapi-product-v1.yaml</inputSpec>
                             <ignoreFileOverride>${project.basedir}/.openapi-generator-ignore</ignoreFileOverride>
                             <generateApiTests>false</generateApiTests>
                             <generateModelTests>false</generateModelTests>
@@ -183,8 +198,7 @@
                                 <apiPackage>${project.groupId}.${server.resource}.proxy</apiPackage>
                                 <configPackage>${project.groupId}.${server.resource}.config</configPackage>
                                 <modelPackage>
-                                    ${project.groupId}.${server.resource}.model.proxy.product
-                                </modelPackage>
+                                    ${project.groupId}.${server.resource}.model.proxy.product</modelPackage>
                                 <serializationLibrary>jackson</serializationLibrary>
                                 <useRuntimeException>true</useRuntimeException>
                                 <microprofileRestClientVersion>3.0</microprofileRestClientVersion>
@@ -194,6 +208,7 @@
                                 <useSingleRequestParameter>false</useSingleRequestParameter>
                                 <implicitHeaders>true</implicitHeaders>
                                 <implicitHeadersRegex></implicitHeadersRegex>
+                                <useJakartaEe>true</useJakartaEe>
                             </configOptions>
                             <library>microprofile</library>
                         </configuration>
