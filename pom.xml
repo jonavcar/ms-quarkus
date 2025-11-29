@@ -168,6 +168,7 @@
                             <generateApiTests>false</generateApiTests>
                             <generateModelTests>false</generateModelTests>
                             <generatorName>java</generatorName>
+                            <!--<generateSupportingFiles>false</generateSupportingFiles>-->
                             <configOptions>
                                 <apiPackage>${project.groupId}.${server.resource}.proxy</apiPackage>
                                 <configPackage>${project.groupId}.${server.resource}.config</configPackage>
@@ -199,6 +200,7 @@
                             <generateApiTests>false</generateApiTests>
                             <generateModelTests>false</generateModelTests>
                             <generatorName>java</generatorName>
+                            <!--<generateSupportingFiles>false</generateSupportingFiles>-->
                             <configOptions>
                                 <apiPackage>${project.groupId}.${server.resource}.proxy</apiPackage>
                                 <configPackage>${project.groupId}.${server.resource}.config</configPackage>
@@ -248,6 +250,43 @@
                                 <source>
                                     ${project.build.directory}/generated-sources/openapi/src/main/java</source>
                             </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.google.code.maven-replacer-plugin</groupId>
+                <artifactId>replacer</artifactId>
+                <version>1.5.3</version>
+                <executions>
+                    <execution>
+                        <id>fix-apiexception-imports</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                        <configuration>
+                            <basedir>
+                                ${project.build.directory}/generated-sources/openapi/src/main/java</basedir>
+                            <includes>
+                                <include>**/*Api.java</include>
+                            </includes>
+                            <replacements>
+                                <replacement>
+                                    <token>(package com\.jonavcar\.ecommerce\.sales\.proxy;)</token>
+                                    <value>$1
+import com.jonavcar.ecommerce.sales.exception.ApiException;
+import com.jonavcar.ecommerce.sales.exception.ApiExceptionMapper;
+                                    </value>
+                                </replacement>
+                                <replacement>
+                                    <token>@RegisterProvider\(ApiExceptionMapper\.class\)</token>
+                                    <value>
+                                        @RegisterProvider(com.jonavcar.ecommerce.sales.exception.ApiExceptionMapper.class)
+                                    </value>
+                                </replacement>
+                            </replacements>
                         </configuration>
                     </execution>
                 </executions>
