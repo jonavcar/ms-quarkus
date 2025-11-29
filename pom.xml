@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.jonavcar.ecommerce</groupId>
     <artifactId>ms-ecommerce</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>
+        <server.resource>sales</server.resource>
         <compiler-plugin.version>3.14.1</compiler-plugin.version>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -13,6 +16,7 @@
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>3.30.1</quarkus.platform.version>
+        <openapi-generator.version>7.13.0</openapi-generator.version>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.5.4</surefire-plugin.version>
     </properties>
@@ -109,6 +113,94 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>${openapi-generator.version}</version>
+                <executions>
+                    <!-- REST Server Code Generation -->
+                    <execution>
+                        <id>jonavcar-quarkus-core-openapi-generator-server</id>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <inputSpec>
+                                ${project.basedir}/src/main/resources/openapi/openapi.yaml
+                            </inputSpec>
+                            <configOptions>
+                                <identifierNamingConvention>camelCase</identifierNamingConvention>
+                                <apiPackage>${project.groupId}.expose.web</apiPackage>
+                                <modelPackage>${project.groupId}.${server.resource}.model.api</modelPackage>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+
+                    <!-- REST Client Code Generation -->
+                    <execution>
+                        <id>jonavcar-quarkus-core-openapi-client-v1</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>
+                                src/main/resources/openapi/client/openapi-client-v1.yaml
+                            </inputSpec>
+                            <ignoreFileOverride>${project.basedir}/.openapi-generator-ignore</ignoreFileOverride>
+                            <generateApiTests>false</generateApiTests>
+                            <generateModelTests>false</generateModelTests>
+                            <generatorName>java</generatorName>
+                            <configOptions>
+                                <apiPackage>${project.groupId}.${server.resource}.proxy</apiPackage>
+                                <configPackage>${project.groupId}.${server.resource}.config</configPackage>
+                                <modelPackage>
+                                    ${project.groupId}.${server.resource}.model.proxy.client
+                                </modelPackage>
+                                <serializationLibrary>jackson</serializationLibrary>
+                                <useRuntimeException>true</useRuntimeException>
+                                <microprofileRestClientVersion>3.0</microprofileRestClientVersion>
+                                <useBeanValidation>true</useBeanValidation>
+                                <useSealedInterfaces>true</useSealedInterfaces>
+                                <identifierNamingConvention>camelCase</identifierNamingConvention>
+                                <useSingleRequestParameter>false</useSingleRequestParameter>
+                                <implicitHeaders>true</implicitHeaders>
+                                <implicitHeadersRegex></implicitHeadersRegex>
+                            </configOptions>
+                            <library>microprofile</library>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>jonavcar-quarkus-core-openapi-product-v1</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>
+                                src/main/resources/openapi/client/openapi-product-v1.yaml
+                            </inputSpec>
+                            <ignoreFileOverride>${project.basedir}/.openapi-generator-ignore</ignoreFileOverride>
+                            <generateApiTests>false</generateApiTests>
+                            <generateModelTests>false</generateModelTests>
+                            <generatorName>java</generatorName>
+                            <configOptions>
+                                <apiPackage>${project.groupId}.${server.resource}.proxy</apiPackage>
+                                <configPackage>${project.groupId}.${server.resource}.config</configPackage>
+                                <modelPackage>
+                                    ${project.groupId}.${server.resource}.model.proxy.product
+                                </modelPackage>
+                                <serializationLibrary>jackson</serializationLibrary>
+                                <useRuntimeException>true</useRuntimeException>
+                                <microprofileRestClientVersion>3.0</microprofileRestClientVersion>
+                                <useBeanValidation>true</useBeanValidation>
+                                <useSealedInterfaces>true</useSealedInterfaces>
+                                <identifierNamingConvention>camelCase</identifierNamingConvention>
+                                <useSingleRequestParameter>false</useSingleRequestParameter>
+                                <implicitHeaders>true</implicitHeaders>
+                                <implicitHeadersRegex></implicitHeadersRegex>
+                            </configOptions>
+                            <library>microprofile</library>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${compiler-plugin.version}</version>
                 <configuration>
@@ -138,7 +230,8 @@
                 </executions>
                 <configuration>
                     <systemPropertyVariables>
-                        <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
+                        <native.image.path>
+                            ${project.build.directory}/${project.build.finalName}-runner</native.image.path>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
                     </systemPropertyVariables>
