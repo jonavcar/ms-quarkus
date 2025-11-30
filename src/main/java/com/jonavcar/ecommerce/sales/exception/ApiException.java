@@ -16,19 +16,19 @@ import jakarta.ws.rs.core.Response;
 
 public class ApiException extends RuntimeException {
 
-  private static final long serialVersionUID = 1L;
-  private Response response;
+    private static final long serialVersionUID = 1L;
+    private Response response;
 
-  public ApiException() {
-    super();
-  }
+    public ApiException() {
+        super();
+    }
 
-  public ApiException(Response response) {
-    super("Api response has status code " + response.getStatus());
-    this.response = response;
-  }
+    public ApiException(Response response) {
+        super("Api response has status code " + response.getStatus());
+        this.response = response;
+    }
 
-  public Response getResponse() {
-    return this.response;
-  }
+    public Response getResponse() {
+        return this.response;
+    }
 }

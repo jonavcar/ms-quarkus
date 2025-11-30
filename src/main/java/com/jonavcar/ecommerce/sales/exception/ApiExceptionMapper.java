@@ -19,15 +19,15 @@ import org.eclipse.microprofile.rest.client.ext.ResponseExceptionMapper;
 
 @Provider
 public class ApiExceptionMapper
-    implements ResponseExceptionMapper<ApiException> {
+        implements ResponseExceptionMapper<ApiException> {
 
-  @Override
-  public boolean handles(int status, MultivaluedMap<String, Object> headers) {
-    return status >= 400;
-  }
+    @Override
+    public boolean handles(int status, MultivaluedMap<String, Object> headers) {
+        return status >= 400;
+    }
 
-  @Override
-  public ApiException toThrowable(Response response) {
-    return new ApiException(response);
-  }
+    @Override
+    public ApiException toThrowable(Response response) {
+        return new ApiException(response);
+    }
 }
