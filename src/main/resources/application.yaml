@@ -2,6 +2,10 @@
 # MS-ECOMMERCE - PRODUCTION CONFIGURATION
 # ============================================
 quarkus:
+  # DESHABILITAR TODOS LOS DEV SERVICES
+  devservices:
+    enabled: false
+
   application:
     name: ms-ecommerce
     version: 1.0.0-SNAPSHOT
@@ -38,10 +42,6 @@ quarkus:
   log:
     level: INFO
     min-level: DEBUG
-    console:
-      enable: true
-      json: true
-      color: false
     category:
       "com.jonavcar.ecommerce":
         level: INFO
@@ -73,24 +73,24 @@ quarkus:
     info-contact-url: https://jonavcar.com
     info-license-name: Apache 2.0
     info-license-url: https://www.apache.org/licenses/LICENSE-2.0.html
-    enable: true
 
   swagger-ui:
-    enable: false
     always-include: false
     path: /q/swagger-ui
 
   # ============================================
-  # KAFKA
+  # KAFKA DEVSERVICES
   # ============================================
   kafka:
     devservices:
       enabled: false
-    bootstrap-servers: localhost:9092
-    health:
-      enabled: true
-    snappy:
-      enabled: true
+
+  # ============================================
+  # APICURIO REGISTRY
+  # ============================================
+  apicurio-registry:
+    devservices:
+      enabled: false
 
   # ============================================
   # REDIS
@@ -98,18 +98,13 @@ quarkus:
   redis:
     devservices:
       enabled: false
-    hosts: redis://localhost:6379
-    database: 0
+    hosts: redis://localhost:6379/0
     client-type: standalone
     timeout: 10s
     max-pool-size: 50
     max-pool-waiting: 50
     reconnect-attempts: 10
     reconnect-interval: 1s
-    tcp-keep-alive: true
-    tcp-no-delay: true
-    health:
-      enabled: true
     client-name: ms-ecommerce-sales
 
   # ============================================
@@ -138,31 +133,11 @@ quarkus:
       providers: com.jonavcar.ecommerce.sales.exception.ApiExceptionMapper
 
   # ============================================
-  # FAULT TOLERANCE
-  # ============================================
-  smallrye-faulttolerance:
-    enabled: true
-    mp-metrics:
-      enabled: true
-
-  # ============================================
-  # Configuración específica de Apicurio Registry
-  # ============================================
-  apicurio-registry:
-    devservices:
-      enabled: false
-
-  # ============================================
   # VAULT
   # ============================================
   vault:
     devservices:
       enabled: false
-    url: http://localhost:8200
-    authentication:
-      client-token: dev-only-token
-    kv-secret-engine-version: 2
-    secret-config-kv-path: ms-ecommerce/prod
 
   # ============================================
   # HEALTH CHECKS
@@ -188,9 +163,8 @@ quarkus:
   otel:
     sdk:
       disabled: false
-    service:
-      name: ms-ecommerce-sales
-      version: 1.0.0
+    resource:
+      attributes: "service.name=ms-ecommerce-sales,service.version=1.0.0"
 
   # ============================================
   # THREADS
@@ -228,10 +202,30 @@ quarkus:
     serialization-inclusion: non-null
 
 # ============================================
+# KAFKA GLOBAL CONFIGURATION
+# ============================================
+kafka:
+  bootstrap:
+    servers: localhost:9092
+  schema:
+    registry:
+      url: http://localhost:8081
+
+# ============================================
 # KAFKA CHANNELS
 # ============================================
 mp:
   messaging:
+    connector:
+      smallrye-kafka:
+        bootstrap:
+          servers: localhost:9092
+        enable:
+          idempotence: true
+        acks: all
+        compression:
+          type: snappy
+
     outgoing:
       sales-orders-out:
         connector: smallrye-kafka
@@ -259,6 +253,7 @@ mp:
           auto:
             commit: false
         max-poll-records: 500
+        health-enabled: false
 
       inventory-updates-in:
         connector: smallrye-kafka
@@ -268,14 +263,7 @@ mp:
         enable:
           auto:
             commit: false
-
-# ============================================
-# SCHEMA REGISTRY
-# ============================================
-kafka:
-  schema:
-    registry:
-      url: http://localhost:8081
+        health-enabled: false
 
 # ============================================
 # CUSTOM PROPERTIES
