@@ -17,6 +17,7 @@
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>3.30.1</quarkus.platform.version>
         <openapi-generator.version>7.13.0</openapi-generator.version>
+        <confluent.version>7.7.0</confluent.version>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.5.4</surefire-plugin.version>
     </properties>
@@ -30,6 +31,15 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <dependency>
+                <groupId>io.quarkiverse.vault</groupId>
+                <artifactId>quarkus-vault-bom</artifactId>
+                <version>3.3.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -77,10 +87,12 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-confluent-registry-avro</artifactId>
         </dependency>
+
         <dependency>
             <groupId>io.quarkiverse.vault</groupId>
             <artifactId>quarkus-vault</artifactId>
         </dependency>
+
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-avro</artifactId>
@@ -123,7 +135,7 @@
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-avro-serializer</artifactId>
-            <version>7.7.0</version>
+            <version>${confluent.version}</version>
         </dependency>
 
         <!-- Bean Validation -->
@@ -192,7 +204,7 @@
                                 <modelPackage>${project.groupId}.${server.resource}.model.api</modelPackage>
                                 <useJakartaEe>true</useJakartaEe>
                                 <dateLibrary>java8</dateLibrary>
-                                <sourceFolder>src/gen/java</sourceFolder>
+                                <sourceFolder>src/main/java</sourceFolder>
                                 <useSwaggerAnnotations>false</useSwaggerAnnotations>
                                 <interfaceOnly>true</interfaceOnly>
                             </configOptions>
@@ -273,29 +285,6 @@
                 <configuration>
                     <parameters>true</parameters>
                 </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.6.0</version>
-                <executions>
-                    <execution>
-                        <id>add-generated-sources</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>
-                                    ${project.build.directory}/generated-sources/openapi/src/gen/java</source>
-                                <source>
-                                    ${project.build.directory}/generated-sources/openapi/src/main/java</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
 
             <!--
